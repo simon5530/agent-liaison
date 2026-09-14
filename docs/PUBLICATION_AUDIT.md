@@ -22,6 +22,8 @@ Date: 2026-09-14
   third-party asset requires an additional license notice.
 - License: MIT.
 - Local Markdown links resolved.
+- GitHub Secret Scanning and Push Protection enabled.
+- GitHub private vulnerability reporting enabled for responsible disclosure.
 
 ## Residual limitations
 
