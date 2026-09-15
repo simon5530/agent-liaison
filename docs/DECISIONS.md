@@ -30,9 +30,41 @@
   a narrow capability, never direct general calendar access.
 - **Reason:** A prompt injection or routing mistake should not expose private events.
 
+## ADR-005: Use existing conversations and calendars as the interface
+
+- **Status:** accepted
+- **Date:** 2026-09-15
+- **Decision:** Use LINE for commands, clarification, approval, and provisional
+  responses; use Google Calendar plus a separate Agent Holds calendar for schedule
+  visibility. Do not build a standalone application for the initial releases.
+- **Reason:** Coordination should happen where people already communicate and review
+  time. Another destination app adds adoption cost without proving the delegated-
+  authority hypothesis.
+- **Tradeoff:** Channel and calendar capabilities constrain the interaction design,
+  and a small private state/audit service is still required.
+
+## ADR-006: Extract candidates, not commitments
+
+- **Status:** accepted
+- **Decision:** Scheduling language in a conversation creates a candidate record.
+  Calendar writes, external replies, moving confirmed events, and cancellation remain
+  governed by explicit authority and approval policies.
+- **Reason:** Date extraction can be ambiguous, incomplete, or conversational rather
+  than intentional. Treating extraction as commitment would create false bookings.
+
+## ADR-007: Separate tentative holds from confirmed events
+
+- **Status:** accepted for the first live write path
+- **Decision:** Place reversible, expiring holds on a dedicated calendar and promote
+  them only after approval. Use tentative status and blocking transparency when a hold
+  is intended to reserve time.
+- **Reason:** The owner needs one familiar visual surface while retaining a clear
+  distinction between agent proposals and commitments.
+
 ## Open decisions
 
 - Google Calendar only versus a provider-neutral adapter after Phase 1.
-- Whether a “soft hold” should be a real private calendar event or internal state.
+- Which policy tier may create a private hold or send a labeled tentative reply
+  without asking first.
 - How requester identity and trust tiers map across LINE, email, and other channels.
 - What categories of non-scheduling provisional answers are safe enough to explore.

@@ -11,6 +11,7 @@ flowchart TB
   subgraph External
     User[Requester]
     Owner[Owner approval]
+    Group[Opt-in group conversation]
   end
 
   subgraph Liaison
@@ -19,20 +20,25 @@ flowchart TB
     Policy[Authority policy engine]
     State[Proposal / hold state machine]
     Audit[(Redacted audit log)]
+    Inbox[Owner conversation inbox]
   end
 
   subgraph PrivateBoundary[Private calendar boundary]
     FreeBusy[Free/busy adapter]
     Preferences[(Working preferences)]
     Calendar[(Calendar provider)]
+    Holds[(Agent Holds calendar)]
   end
 
   User --> Channel --> Identity --> Policy
+  Group --> Channel
   Calendar --> FreeBusy --> Policy
   Preferences --> Policy
   Policy --> State --> Channel
   Policy -->|approval required| Owner
   Owner --> State
+  State --> Inbox
+  State -->|temporary block| Holds
   Policy --> Audit
   State --> Audit
 ```
@@ -40,6 +46,12 @@ flowchart TB
 ## State machine
 
 ```text
+DETECTED
+  ├─ no scheduling intent ─────→ DISCARDED
+  └─ scheduling intent ────────→ CANDIDATE
+                                  ├─ missing facts ─────→ NEEDS_CONTEXT
+                                  ├─ conflict ──────────→ REPLAN_PROPOSED
+                                  └─ complete request ──→ REQUESTED
 REQUESTED
   ├─ invalid / unauthorized ─→ DECLINED
   ├─ uncertain / high impact ─→ AWAITING_OWNER
@@ -49,6 +61,10 @@ REQUESTED
                                   ├─ requester rejects → DECLINED
                                   └─ TTL reached ─────→ EXPIRED
 ```
+
+Confirmed events are never moved or cancelled solely by priority scoring. A conflict
+creates a recommendation for the owner; only an explicit approval changes the
+authoritative calendar.
 
 ## Why a dedicated boundary
 
@@ -65,3 +81,6 @@ inside the owner-controlled service or a dedicated scheduling agent.
 - event-driven notification for calendar changes;
 - deterministic policy rules before optional LLM wording;
 - correlation IDs across channel, policy, calendar, and audit records.
+- source minimization: retain a message identifier and extracted scheduling facts,
+  not an unrelated group transcript;
+- separate calendars or metadata for tentative holds and confirmed commitments.

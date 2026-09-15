@@ -23,6 +23,10 @@ The difficult part is not calendar CRUD. It is **delegated authority**:
 - When is a response only tentative, and when may it become final?
 - How are holds, expiration, conflicts, approvals, and audit records handled?
 
+The intended product experience is **conversation-first**: the existing calendar is
+the schedule view, and existing messaging channels provide commands, notifications,
+and approval. A new destination app is not part of the initial product hypothesis.
+
 ## Business applications
 
 - executive and recruiting scheduling without exposing calendar details;
@@ -42,6 +46,11 @@ interruptions without increasing privacy incidents or false commitments.
 4. It returns one of: `PROPOSE_SLOTS`, `TENTATIVE_HOLD`, or `ESCALATE`.
 5. Every tentative answer carries an owner, reason, confidence, and expiry time.
 6. Final external booking remains approval-gated in the first live release.
+
+Calendar mentions found in owner or opt-in group conversations first become
+`CANDIDATE` records. They do not become commitments merely because an LLM extracted
+a date. A separate, visibly colored Agent Holds calendar can show approved or
+policy-authorized temporary blocks without mixing them with confirmed events.
 
 ```mermaid
 flowchart LR
@@ -67,15 +76,18 @@ across communication channels.
 
 See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 [architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), and the
+[conversation-first workflow](docs/CONVERSATION_FIRST_WORKFLOW.md), plus the
 [publication audit](docs/PUBLICATION_AUDIT.md).
 
 ## Delivery phases
 
 - **Phase 0 — current:** requirements, threat model, standards, and mock examples.
 - **Phase 1:** local CLI with synthetic calendars and preferences; no external side effects.
-- **Phase 2:** read-only Google Calendar free/busy integration using least-privilege OAuth.
-- **Phase 3:** expiring soft holds with approval before final booking.
-- **Later:** multi-person negotiation, multiple channels, and narrowly scoped provisional answers.
+- **Phase 2:** read-only Google Calendar free/busy plus private LINE recommendations.
+- **Phase 3:** a separate Agent Holds calendar with expiring tentative events and
+  approval before final booking or external reply.
+- **Later:** opt-in group detection, email/calendar invitations, agent-to-agent
+  negotiation, and narrowly scoped provisional answers.
 
 ## Continue / drop gate
 
@@ -95,6 +107,7 @@ access without a defensible benefit.
 
 - [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) — scope and acceptance criteria
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — components and state machine
+- [docs/CONVERSATION_FIRST_WORKFLOW.md](docs/CONVERSATION_FIRST_WORKFLOW.md) — calendar-as-view and messaging-as-control design
 - [docs/RESEARCH.md](docs/RESEARCH.md) — existing-solution preflight
 - [docs/LEARNING.md](docs/LEARNING.md) — protocols and reusable concepts
 - [docs/DECISIONS.md](docs/DECISIONS.md) — architectural decisions
