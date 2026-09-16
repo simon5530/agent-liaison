@@ -44,3 +44,21 @@ approval, it contains only the selected confirmed slot.
 Phase 1 validates the policy and state-transition core. It does **not** yet prove
 OpenClaw-to-OpenClaw delivery, Google Calendar authorization, or cross-Gateway A2A.
 Those boundaries should be introduced separately so failures remain attributable.
+
+## Same-Gateway tool boundary (Phase 1b)
+
+Verified on OpenClaw 2026.9.4 with synthetic data:
+
+1. Gateway health and connectivity probe passed after plugin installation.
+2. The `agent-liaison` tool-only plugin loaded as enabled.
+3. A Main probe could not see or call `request_synthetic_availability`.
+4. A non-allowlisted Guest session could not see or call the tool.
+5. The allowlisted Guest session saw exactly the added scheduling tool and
+   called it successfully once.
+6. The result was labelled `source=synthetic` and `authority=tentative`.
+7. A redacted owner event was queued to the fixed Main session and its
+   heartbeat run completed.
+
+This proves tool visibility and a bounded synthetic handoff. It does **not**
+prove Google Calendar access, real availability, owner approval callbacks,
+external replies, or A2A interoperability.

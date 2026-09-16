@@ -1,0 +1,40 @@
+{
+  "id": "agent-liaison",
+  "name": "Agent Liaison",
+  "description": "Expose one bounded synthetic scheduling request to an allowlisted Guest session.",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "required": [
+      "ownerSessionKey",
+      "allowedRequesterSessionKeys"
+    ],
+    "properties": {
+      "ownerSessionKey": {
+        "type": "string",
+        "description": "Fixed Main session that receives redacted approval events."
+      },
+      "allowedRequesterSessionKeys": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1
+      }
+    },
+    "additionalProperties": false
+  },
+  "activation": {
+    "onStartup": true
+  },
+  "contracts": {
+    "tools": [
+      "request_synthetic_availability"
+    ]
+  },
+  "toolMetadata": {
+    "request_synthetic_availability": {
+      "optional": true
+    }
+  }
+}
