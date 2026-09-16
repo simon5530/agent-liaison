@@ -75,8 +75,9 @@ Its differentiated layer is policy-bounded negotiation and provisional answers
 across communication channels.
 
 See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
-[architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), and the
-[conversation-first workflow](docs/CONVERSATION_FIRST_WORKFLOW.md), plus the
+[architecture](docs/ARCHITECTURE.md), [decisions](docs/DECISIONS.md), the
+[conversation-first workflow](docs/CONVERSATION_FIRST_WORKFLOW.md), the
+[A2A and capability boundary](docs/A2A_BOUNDARY.md), and the
 [publication audit](docs/PUBLICATION_AUDIT.md).
 
 ## Delivery phases

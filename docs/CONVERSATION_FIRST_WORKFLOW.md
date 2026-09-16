@@ -85,6 +85,12 @@ granting the guest a general session messaging tool. A standardized cross-system
 protocol becomes relevant only when the requester has an independent agent on another
 Gateway or vendor platform.
 
+The same broker capability can later be published as an A2A Skill. A2A supplies
+discovery, transport bindings, authentication advertisement, Tasks, Messages,
+streaming, and status. The scheduling server must still enforce requester scopes,
+validate structured fields, minimize returned data, and treat remote message content
+as untrusted.
+
 ## Priority is a recommendation, not authority
 
 A deterministic policy should evaluate:
