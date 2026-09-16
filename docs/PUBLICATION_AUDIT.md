@@ -1,6 +1,6 @@
 # Publication audit
 
-Date: 2026-09-14
+Last verified: 2026-09-16
 
 ## Scope
 
@@ -18,8 +18,9 @@ Date: 2026-09-14
 - Commit history rebuilt as a sanitized public baseline using a GitHub noreply address.
 - No real calendar records, messages, identities, screenshots, archives, logs,
   credentials, or private configuration included.
-- The repository contains design documentation only; no dependency or bundled
-  third-party asset requires an additional license notice.
+- The repository contains design documentation and a standard-library-only Python
+  prototype; no runtime dependency or bundled third-party asset requires an
+  additional license notice.
 - License: MIT.
 - Local Markdown links resolved.
 - GitHub Secret Scanning and Push Protection enabled.
@@ -28,5 +29,5 @@ Date: 2026-09-14
 ## Residual limitations
 
 - Pattern scanning cannot prove the absence of every possible sensitive semantic detail.
-- The project is a design skeleton; runtime and clean-environment verification begin
-  with the synthetic Phase 1 implementation.
+- Phase 1 proves only the synthetic policy core. Live channel, calendar, and A2A
+  adapters remain intentionally unverified and out of the current trust boundary.

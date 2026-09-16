@@ -6,9 +6,24 @@
 
 ## Status
 
-**Decision: CONTINUE to a bounded prototype.** This repository currently contains
-the project skeleton and design evidence only. It has no live calendar access,
-sends no messages, and cannot make commitments.
+**Decision: CONTINUE. Phase 1 synthetic broker implemented.** The current prototype
+runs locally with deterministic fixtures. It has no live calendar access, sends no
+messages, and cannot make external commitments.
+
+## Try the bounded prototype
+
+Python 3.9 or newer is sufficient; the prototype has no third-party runtime
+dependencies.
+
+```bash
+PYTHONPATH=src python3 -m agent_liaison.demo
+PYTHONPATH=src python3 -m unittest discover -s tests -v
+```
+
+The demo exercises one same-runtime handoff: an allowlisted requester receives
+three explicitly tentative choices, the owner receives a separate approval packet,
+and approval confirms exactly one choice while deleting its sibling holds. The
+broker never exposes event titles, attendees, notes, or locations.
 
 ## Problem
 
@@ -82,8 +97,9 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 
 ## Delivery phases
 
-- **Phase 0 — current:** requirements, threat model, standards, and mock examples.
-- **Phase 1:** local CLI with synthetic calendars and preferences; no external side effects.
+- **Phase 0 — complete:** requirements, threat model, standards, and mock examples.
+- **Phase 1 — implemented:** local CLI with synthetic calendars and preferences;
+  no external side effects. See [verification evidence](docs/VERIFICATION.md).
 - **Phase 2:** read-only Google Calendar free/busy plus private LINE recommendations.
 - **Phase 3:** a separate Agent Holds calendar with expiring tentative events and
   approval before final booking or external reply.
@@ -116,6 +132,7 @@ access without a defensible benefit.
 - [docs/PORTFOLIO.md](docs/PORTFOLIO.md) — case-study framing and evidence gaps
 - [docs/IDEA_LOG.md](docs/IDEA_LOG.md) — idea-funnel history
 - [docs/PUBLICATION_AUDIT.md](docs/PUBLICATION_AUDIT.md) — privacy/security release gate
+- [docs/VERIFICATION.md](docs/VERIFICATION.md) — executable acceptance evidence and gaps
 
 ## License
 
