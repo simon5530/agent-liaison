@@ -43,8 +43,8 @@ candidate pipeline rather than write directly to the calendar.
 An owner DM contains a compact approval packet:
 
 ```text
-Source: opt-in project group
-Request: 30-minute review this Thursday afternoon
+Source: allowlisted requester via guest agent
+Request: visit this week after 18:00
 Conflict: overlaps a flexible focus block
 Recommendation: hold 15:30–16:00; keep the earlier confirmed meeting
 Authority: tentative, expires in 2 hours
@@ -55,21 +55,35 @@ Natural-language replies remain valid: “accept this one,” “move the focus 
 or “offer Friday morning instead.” Buttons or quick replies may reduce ambiguity,
 but the workflow does not require a new application.
 
-## Group-conversation boundary
+## Direct requester to owner-agent workflow
 
-A bot in a group may receive messages beyond the scheduling request. Safe handling
-therefore requires:
+An allowlisted requester talks to the restricted guest agent. The guest collects a
+date range, duration, time zone, and short purpose, then submits a structured request
+to the liaison broker. The owner agent queries derived availability and may create
+several short-lived events on the Agent Holds calendar when the owner's policy permits.
 
-1. visible opt-in and a clear bot identity;
-2. processing only direct mentions of the owner or liaison plus scheduling intent;
-3. discarding unrelated content;
-4. retaining extracted fields and a source reference rather than the full transcript;
-5. showing the owner the source and proposed action before a commitment;
-6. sending a group reply only when the authority policy permits it.
+The requester receives clearly tentative options while the owner receives the same
+proposal with selection actions. When the owner selects a slot, the owner agent:
 
-The first group release should observe and privately recommend. Autonomous group
-replies can follow only after labeled tentative language and expiry behavior are
-shown to be consistently understood.
+1. rechecks free/busy and proposal expiry;
+2. confirms the selected event;
+3. deletes the sibling holds;
+4. records the decision and correlation ID;
+5. signals the guest agent to send the confirmation.
+
+If any step fails, the workflow does not claim confirmation. It reports the current
+state and either retries idempotently or compensates by removing stale holds.
+
+The guest never learns why other times are unavailable and never receives raw event
+objects, owner memory, node tools, or arbitrary access to the owner session.
+
+## Is this A2A?
+
+It is an agent-to-agent handoff in the architectural sense. Within one OpenClaw
+Gateway, the first implementation should use a capability-specific broker rather than
+granting the guest a general session messaging tool. A standardized cross-system A2A
+protocol becomes relevant only when the requester has an independent agent on another
+Gateway or vendor platform.
 
 ## Priority is a recommendation, not authority
 
@@ -106,17 +120,18 @@ duplicate holds.
 2. Read-only Google free/busy drives private LINE recommendations.
 3. A separate Agent Holds calendar receives reversible expiring holds.
 4. Owner approval promotes a hold and permits an external response.
-5. Opt-in LINE group detection is enabled in observe-only mode.
+5. The restricted guest can submit one schema-validated request to the broker.
 6. Narrow tentative replies are enabled for explicit requester/policy classes.
 7. Email invitations and Apple/iCloud-only calendars become additional adapters.
-8. Agent-to-agent negotiation exchanges minimal structured proposals.
+8. Cross-system agent negotiation adopts a standard A2A protocol only when needed.
 
 ## Primary references
 
 - [Google Calendar free/busy](https://developers.google.com/workspace/calendar/api/v3/reference/freebusy/query)
 - [Google Calendar events](https://developers.google.com/workspace/calendar/api/v3/reference/events/insert)
-- [LINE group chats](https://developers.line.biz/en/docs/messaging-api/group-chats/)
 - [LINE webhook events](https://developers.line.biz/en/reference/messaging-api/#webhook-event-objects)
+- [OpenClaw session tools](https://docs.openclaw.ai/concepts/session-tool)
+- [OpenClaw cross-agent configuration](https://docs.openclaw.ai/gateway/config-tools/sessions-and-subagents)
 - [Apple Calendar accounts](https://support.apple.com/guide/iphone/use-multiple-calendars-iph3d1110d4/ios)
 - [iCalendar status](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.1.11)
 - [iCalendar time transparency](https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.2.7)

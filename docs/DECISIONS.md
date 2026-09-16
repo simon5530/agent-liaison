@@ -61,6 +61,36 @@
 - **Reason:** The owner needs one familiar visual surface while retaining a clear
   distinction between agent proposals and commitments.
 
+## ADR-008: Keep guest minimal and add a narrow liaison broker
+
+- **Status:** accepted
+- **Date:** 2026-09-16
+- **Decision:** The guest agent may submit only a schema-validated scheduling request
+  to a fixed owner-agent workflow. It does not receive Calendar, Node, owner memory,
+  session history, or a generic cross-agent messaging tool.
+- **Reason:** Capability-specific delegation scales better than repeatedly adding
+  broad data and device permissions to an untrusted conversation surface.
+- **Tradeoff:** A broker and workflow state must be implemented and tested.
+
+## ADR-009: Use internal handoff before a standard A2A protocol
+
+- **Status:** accepted
+- **Decision:** Treat guest-to-owner coordination as an internal agent-to-agent
+  handoff on the same Gateway. Defer a cross-system A2A protocol until an independent
+  external agent needs discovery, authentication, task exchange, and status updates.
+- **Reason:** A standard network protocol adds no value while both agents share one
+  runtime and trust administrator. The security requirement is a narrow capability,
+  not more connectivity.
+
+## ADR-010: Drop group monitoring
+
+- **Status:** accepted
+- **Date:** 2026-09-16
+- **Decision:** Remove LINE group monitoring from the roadmap. Scheduling requests
+  enter through direct requester-to-guest or owner-to-main conversations.
+- **Reason:** Direct conversations satisfy the initial personal workflow with less
+  privacy exposure and avoid group-bot constraints.
+
 ## Open decisions
 
 - Google Calendar only versus a provider-neutral adapter after Phase 1.

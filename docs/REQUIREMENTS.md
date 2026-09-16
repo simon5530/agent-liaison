@@ -14,8 +14,8 @@ slots or a clearly labeled escalation without learning why the owner is busy.
 - duration, acceptable date range, and time zone;
 - urgency and optional location/channel;
 - synthetic busy intervals and explicit owner preferences.
-- optional scheduling facts extracted from an owner conversation or an opt-in group
-  message that directly mentions the owner or liaison.
+- optional scheduling facts extracted from an owner conversation or an allowlisted
+  requester's direct conversation with the guest agent.
 
 ### Outputs
 
@@ -49,8 +49,14 @@ slots or a clearly labeled escalation without learning why the owner is busy.
   when account sync is already enabled.
 - Apple/iCloud-only calendars and email extraction remain separate adapters added
   only after the Google Calendar workflow is reliable.
-- Group monitoring is opt-in and visible to participants. Only direct mentions plus
-  scheduling intent enter the candidate pipeline.
+- The guest agent may submit only a structured scheduling request to a fixed liaison
+  broker. It receives derived slots and status, never calendar event details.
+- The broker notifies the owner agent and requester-facing guest from the same
+  correlation ID so both sides observe one state transition.
+- Selecting a proposed slot triggers an availability recheck, confirms the selected
+  event, and deletes sibling tentative holds atomically or compensates on failure.
+- Date output must include ISO date, IANA time zone, and a computed weekday; user-
+  supplied weekday labels are never trusted without validation.
 - Every recommendation shows source, requester, proposed time, conflict, authority
   level, expiry, and the action awaiting the owner.
 - The owner can approve, propose alternatives, decline, ask for clarification, or
@@ -63,7 +69,8 @@ slots or a clearly labeled escalation without learning why the owner is busy.
 - final external booking without approval;
 - supporting every calendar provider;
 - autonomous rescheduling or cancellation;
-- silent collection of complete group transcripts;
+- group monitoring in the current roadmap;
+- generic cross-agent session or transcript access for the guest agent;
 - automatic displacement of a confirmed event based only on model-estimated priority;
 - voice identity cloning or pretending the owner personally replied.
 

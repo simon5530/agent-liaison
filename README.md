@@ -47,10 +47,10 @@ interruptions without increasing privacy incidents or false commitments.
 5. Every tentative answer carries an owner, reason, confidence, and expiry time.
 6. Final external booking remains approval-gated in the first live release.
 
-Calendar mentions found in owner or opt-in group conversations first become
+Calendar requests from the owner or an allowlisted direct requester first become
 `CANDIDATE` records. They do not become commitments merely because an LLM extracted
-a date. A separate, visibly colored Agent Holds calendar can show approved or
-policy-authorized temporary blocks without mixing them with confirmed events.
+a date. A separate, visibly colored Agent Holds calendar can show policy-authorized
+temporary blocks without mixing them with confirmed events.
 
 ```mermaid
 flowchart LR
@@ -86,8 +86,8 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 - **Phase 2:** read-only Google Calendar free/busy plus private LINE recommendations.
 - **Phase 3:** a separate Agent Holds calendar with expiring tentative events and
   approval before final booking or external reply.
-- **Later:** opt-in group detection, email/calendar invitations, agent-to-agent
-  negotiation, and narrowly scoped provisional answers.
+- **Later:** email/calendar invitations, cross-system agent negotiation, and narrowly
+  scoped provisional answers. Group monitoring is dropped from the current roadmap.
 
 ## Continue / drop gate
 
