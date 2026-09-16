@@ -4,8 +4,8 @@
 
 ### User story
 
-As a meeting requester, I can ask for a time range and receive safe candidate
-slots or a clearly labeled escalation without learning why the owner is busy.
+As a meeting requester, I can ask for a time range and receive clearly labeled
+candidate slots while the owner receives the same choices for approval.
 
 ### Inputs
 
@@ -13,36 +13,49 @@ slots or a clearly labeled escalation without learning why the owner is busy.
 - participant identities;
 - duration, acceptable date range, and time zone;
 - urgency and optional location/channel;
-- synthetic busy intervals and explicit owner preferences.
+- Guest-visible policy context and explicit requester constraints;
 - optional scheduling facts extracted from an owner conversation or an allowlisted
   requester's direct conversation with the guest agent.
 
 ### Outputs
 
-- decision: `PROPOSE_SLOTS`, `TENTATIVE_HOLD`, `ESCALATE`, or `DECLINE`;
+- decision: `PROPOSE_CANDIDATES`, `CONFIRMED`, `ESCALATE`, or `DECLINE`;
 - zero or more candidate intervals;
 - human-readable reason that contains no private event data;
-- authority level: `advisory`, `tentative`, or `confirmed`;
-- expiry time for every tentative result;
+- authority level: `candidate` or `confirmed`;
+- expiry time for every candidate result;
 - correlation ID for audit and retry safety.
 
 ## Acceptance criteria
 
-1. Given synthetic busy intervals, returned slots never overlap a busy interval.
+1. Candidate output explicitly states that Calendar and Node were not checked.
 2. Returned times include an IANA time-zone identifier and unambiguous timestamp.
 3. Unknown requester, participant, or time zone fails closed to `ESCALATE`.
 4. The response never includes calendar title, attendee list, location, or notes.
 5. Identical retried requests with the same idempotency key do not create duplicate holds.
-6. A tentative hold expires automatically and is never presented as confirmed.
+6. A candidate expires automatically and is never presented as confirmed.
 7. Every decision produces a redacted audit event with policy version and reason code.
 8. No network, calendar write, or outbound message occurs in Release 1.
 9. Conversation extraction produces a `CANDIDATE`, not a confirmed event.
 10. Irrelevant conversation text is discarded; audit records retain only the source
     reference, extracted scheduling facts, confidence, and reason code.
 
-## Conversation-first live requirements
+## Phase 2: same-Gateway owner approval
 
-- Google Calendar is the initial authoritative schedule store.
+- The Guest agent may use its own memory and explicit conversation constraints.
+- The Guest agent does not receive Node, Calendar, owner memory, transcript, or
+  generic session-tool access.
+- Candidate output must say that real availability was not checked.
+- The broker sends one correlated proposal to the owner and requester-facing sessions.
+- Only an explicit human owner decision may change `candidate` to `confirmed`.
+- Main records and relays the decision; Main does not infer or substitute the decision.
+- A confirmed result contains only the owner-selected slot.
+- Proposal state is currently process-local and must fail closed after a restart.
+
+## Future connected requirements
+
+- Google Calendar becomes the initial authoritative schedule store when the A2A
+  boundary is introduced.
 - A separate Agent Holds calendar displays expiring tentative blocks.
 - LINE direct messages provide recommendations, clarification, and approval actions.
 - iPhone Calendar may display the same Google calendars; it is not a second source
@@ -53,7 +66,8 @@ slots or a clearly labeled escalation without learning why the owner is busy.
   broker. It receives derived slots and status, never calendar event details.
 - The broker notifies the owner agent and requester-facing guest from the same
   correlation ID so both sides observe one state transition.
-- Selecting a proposed slot triggers an availability recheck, confirms the selected
+- After Calendar integration, selecting a proposed slot triggers an availability
+  recheck, confirms the selected
   event, and deletes sibling tentative holds atomically or compensates on failure.
 - Date output must include ISO date, IANA time zone, and a computed weekday; user-
   supplied weekday labels are never trusted without validation.
@@ -71,6 +85,7 @@ slots or a clearly labeled escalation without learning why the owner is busy.
 - autonomous rescheduling or cancellation;
 - group monitoring in the current roadmap;
 - generic cross-agent session or transcript access for the guest agent;
+- direct Node access for the guest agent;
 - automatic displacement of a confirmed event based only on model-estimated priority;
 - voice identity cloning or pretending the owner personally replied.
 

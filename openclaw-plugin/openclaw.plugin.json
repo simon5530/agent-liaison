@@ -1,8 +1,8 @@
 {
   "id": "agent-liaison",
   "name": "Agent Liaison",
-  "description": "Expose bounded scheduling availability to an allowlisted Guest session.",
-  "version": "0.2.0",
+  "description": "Coordinate bounded candidate-time proposals and owner decisions.",
+  "version": "0.3.0",
   "configSchema": {
     "type": "object",
     "required": [
@@ -19,34 +19,6 @@
           "type": "string"
         },
         "minItems": 1
-      },
-      "googleCalendar": {
-        "type": "object",
-        "required": [
-          "clientId",
-          "clientSecret",
-          "refreshToken"
-        ],
-        "properties": {
-          "clientId": {
-            "type": "string",
-            "minLength": 1
-          },
-          "clientSecret": {
-            "type": "string",
-            "minLength": 1
-          },
-          "refreshToken": {
-            "type": "string",
-            "minLength": 1
-          },
-          "calendarId": {
-            "type": "string",
-            "minLength": 1,
-            "default": "primary"
-          }
-        },
-        "additionalProperties": false
       }
     },
     "additionalProperties": false
@@ -56,26 +28,20 @@
   },
   "contracts": {
     "tools": [
-      "request_synthetic_availability",
-      "request_readonly_availability"
+      "request_candidate_times",
+      "check_candidate_status",
+      "record_owner_scheduling_decision"
     ]
   },
   "toolMetadata": {
-    "request_synthetic_availability": {
+    "request_candidate_times": {
       "optional": true
     },
-    "request_readonly_availability": {
+    "check_candidate_status": {
       "optional": true
-    }
-  },
-  "configContracts": {
-    "secretInputs": {
-      "bundledDefaultEnabled": false,
-      "paths": [
-        { "path": "googleCalendar.clientId", "expected": "string", "ownerKind": "capability" },
-        { "path": "googleCalendar.clientSecret", "expected": "string", "ownerKind": "capability" },
-        { "path": "googleCalendar.refreshToken", "expected": "string", "ownerKind": "capability" }
-      ]
+    },
+    "record_owner_scheduling_decision": {
+      "optional": true
     }
   }
 }

@@ -93,7 +93,7 @@
 
 ## ADR-011: Use read-only FreeBusy before Calendar writes
 
-- **Status:** accepted
+- **Status:** deferred to the cross-Gateway phase
 - **Date:** 2026-09-16
 - **Decision:** Phase 2 queries only Google Calendar FreeBusy with the
   `calendar.freebusy` OAuth scope. It returns derived slots and never reads event
@@ -103,10 +103,35 @@
 - **Tradeoff:** OpenClaw needs its own Google OAuth client; credentials from a
   ChatGPT/Codex connector cannot cross the runtime boundary.
 
+## ADR-012: Prove the local owner-decision loop before Calendar and A2A
+
+- **Status:** accepted
+- **Date:** 2026-09-16
+- **Decision:** Phase 2 completes the same-Gateway candidate → owner decision →
+  Guest confirmation loop. Candidate times use only Guest-visible context and
+  requester constraints. Google Calendar login and cross-Gateway A2A move together
+  to Phase 3.
+- **Reason:** Calendar data cannot compensate for an unreliable authority handoff.
+  Proving correlation, expiry, explicit human approval, and bounded return delivery
+  first keeps failures attributable and reduces active credentials.
+- **Tradeoff:** Current candidate times are proposals, not verified availability.
+  The system must say so clearly and may require more owner corrections.
+
+## ADR-013: Disable generic cross-agent session access
+
+- **Status:** accepted
+- **Date:** 2026-09-16
+- **Decision:** Scope session visibility to each agent and disable OpenClaw's generic
+  agent-to-agent messaging. All requester-to-owner coordination must pass through
+  the typed liaison tools.
+- **Reason:** The workflow needs a scheduling capability, not transcript access or
+  arbitrary prompt delivery. Removing the broader route reduces prompt-injection
+  and accidental-disclosure risk without affecting the broker.
+
 ## Open decisions
 
-- Whether a provider-neutral availability interface is needed after the Google
-  FreeBusy path is proven.
+- Whether a provider-neutral availability interface is needed when Calendar and A2A
+  are introduced.
 - Which policy tier may create a private hold or send a labeled tentative reply
   without asking first.
 - How requester identity and trust tiers map across LINE, email, and other channels.

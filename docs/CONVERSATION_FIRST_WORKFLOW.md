@@ -25,7 +25,18 @@ agent-to-agent exchange carries only the meeting intent, derived availability,
 proposal identifier, authority label, and expiry—not raw calendars or conversation
 history.
 
-## Calendar as the visual control surface
+## Current phase: conversation as the control surface
+
+The current release does not use Calendar or Node data. Guest interprets an
+allowlisted request using:
+
+- the requester's explicit date range, duration, time window, purpose, and time zone;
+- Guest's own isolated memory and published policy context; and
+- no private owner memory, Node content, calendar data, or transcript history.
+
+The result is a **candidate proposal**, not verified availability.
+
+## Future phase: calendar as the visual control surface
 
 The initial source of truth is Google Calendar:
 
@@ -45,9 +56,9 @@ An owner DM contains a compact approval packet:
 ```text
 Source: allowlisted requester via guest agent
 Request: visit this week after 18:00
-Conflict: overlaps a flexible focus block
-Recommendation: hold 15:30–16:00; keep the earlier confirmed meeting
-Authority: tentative, expires in 2 hours
+Availability check: not performed in this phase
+Recommendation: choose one candidate or propose an alternative
+Authority: candidate, expires in 2 hours
 Actions: approve / alternatives / decline / ask context
 ```
 
@@ -62,20 +73,21 @@ date range, duration, time zone, and short purpose, then submits a structured re
 to the liaison broker. The owner agent queries derived availability and may create
 several short-lived events on the Agent Holds calendar when the owner's policy permits.
 
-The requester receives clearly tentative options while the owner receives the same
-proposal with selection actions. When the owner selects a slot, the owner agent:
+The requester receives clearly labeled candidate options while the owner receives
+the same proposal. When the owner selects a slot, the owner agent:
 
-1. rechecks free/busy and proposal expiry;
-2. confirms the selected event;
-3. deletes the sibling holds;
-4. records the decision and correlation ID;
-5. signals the guest agent to send the confirmation.
+1. checks proposal expiry and correlation;
+2. records the human owner's explicit decision;
+3. retains only the selected candidate;
+4. signals the Guest agent with the confirmed or declined result; and
+5. lets Guest communicate the result to the requester.
 
 If any step fails, the workflow does not claim confirmation. It reports the current
 state and either retries idempotently or compensates by removing stale holds.
 
-The guest never learns why other times are unavailable and never receives raw event
-objects, owner memory, node tools, or arbitrary access to the owner session.
+The Guest never receives raw event objects, owner memory, Node tools, or arbitrary
+access to the owner session. Without Calendar, Guest must not imply that unselected
+times are unavailable.
 
 ## Is this A2A?
 
@@ -110,10 +122,12 @@ commitment changes.
 ## State and actions
 
 ```text
-DETECTED → CANDIDATE → NEEDS_CONTEXT | PROPOSED | REPLAN_PROPOSED
-PROPOSED → HELD → APPROVED → CONFIRMED
-                    └──────→ DECLINED
-HELD → EXPIRED
+DETECTED → NEEDS_CONTEXT | CANDIDATE_PROPOSED
+CANDIDATE_PROPOSED → CONFIRMED | DECLINED | EXPIRED
+
+Future with Calendar:
+CANDIDATE_PROPOSED → AVAILABILITY_CHECKED → TENTATIVE | REPLAN_PROPOSED
+TENTATIVE → CONFIRMED | DECLINED | EXPIRED
 ```
 
 Every transition carries a correlation ID, policy version, actor, reason code, and
@@ -123,13 +137,12 @@ duplicate holds.
 ## Recommended delivery sequence
 
 1. Synthetic conversation fixtures produce candidates and approval packets.
-2. Read-only Google free/busy drives private LINE recommendations.
-3. A separate Agent Holds calendar receives reversible expiring holds.
-4. Owner approval promotes a hold and permits an external response.
-5. The restricted guest can submit one schema-validated request to the broker.
-6. Narrow tentative replies are enabled for explicit requester/policy classes.
+2. Same-Gateway owner approval returns a confirmed or declined result to Guest.
+3. Cross-Gateway agent negotiation adopts A2A using the proven typed capability.
+4. Read-only Google FreeBusy adds authoritative conflict checks behind that boundary.
+5. A separate Agent Holds calendar receives reversible expiring holds.
+6. Owner approval promotes a hold and permits an external response.
 7. Email invitations and Apple/iCloud-only calendars become additional adapters.
-8. Cross-system agent negotiation adopts a standard A2A protocol only when needed.
 
 ## Primary references
 

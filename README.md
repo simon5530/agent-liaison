@@ -6,9 +6,10 @@
 
 ## Status
 
-**Decision: CONTINUE. Phase 1 is live with synthetic data; Phase 2's read-only
-FreeBusy adapter is implemented and awaiting OAuth proof.** It sends no external
-messages, performs no Calendar writes, and cannot make external commitments.
+**Decision: CONTINUE. Phase 1 proves the policy core; Phase 2 now focuses on the
+same-Gateway owner-approval loop.** Google Calendar and cross-Gateway A2A are
+intentionally deferred until local communication, authority, expiry, and confirmation
+are reliable.
 
 ## Try the bounded prototype
 
@@ -20,10 +21,10 @@ PYTHONPATH=src python3 -m agent_liaison.demo
 PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
-The demo exercises one same-runtime handoff: an allowlisted requester receives
-three explicitly tentative choices, the owner receives a separate approval packet,
-and approval confirms exactly one choice while deleting its sibling holds. The
-broker never exposes event titles, attendees, notes, or locations.
+The demo exercises one same-runtime handoff: an allowlisted requester receives three
+explicitly labeled **candidate** choices, the owner receives a separate approval
+packet, and approval confirms exactly one choice. Without a schedule source, these
+choices do not claim real availability.
 
 ## Problem
 
@@ -56,11 +57,11 @@ interruptions without increasing privacy incidents or false commitments.
 ## First bounded workflow
 
 1. A requester submits a meeting window, duration, participants, and urgency.
-2. The liaison queries derived free/busy data, never private event titles.
-3. A policy engine combines availability with explicit working preferences.
-4. It returns one of: `PROPOSE_SLOTS`, `TENTATIVE_HOLD`, or `ESCALATE`.
-5. Every tentative answer carries an owner, reason, confidence, and expiry time.
-6. Final external booking remains approval-gated in the first live release.
+2. The guest uses only its own memory and the requester's explicit constraints.
+3. A policy engine generates up to three candidate times without claiming availability.
+4. The broker sends the same proposal to the owner agent and records expiry.
+5. The human owner approves one candidate, proposes an alternative, or declines.
+6. Only the approved result is communicated as confirmed.
 
 Calendar requests from the owner or an allowlisted direct requester first become
 `CANDIDATE` records. They do not become commitments merely because an LLM extracted
@@ -72,10 +73,9 @@ flowchart LR
     R[Requester] --> C[Channel adapter]
     C --> N[Normalize request]
     N --> P[Authority policy]
-    A[Free/busy adapter] --> P
-    W[Working preferences] --> P
+    W[Guest-visible policy context] --> P
     P -->|safe| S[Propose slots]
-    P -->|reversible| H[Soft hold + TTL]
+    P -->|candidate| H[Owner decision + TTL]
     P -->|uncertain/high impact| E[Escalate to owner]
     S --> L[Audit log]
     H --> L
@@ -100,13 +100,14 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 - **Phase 0 — complete:** requirements, threat model, standards, and mock examples.
 - **Phase 1 — implemented:** local CLI with synthetic calendars and preferences;
   no external side effects. See [verification evidence](docs/VERIFICATION.md).
-- **Phase 2 — implementation complete, live proof pending:** read-only Google
-  Calendar FreeBusy plus a private owner notification. OAuth is limited to
-  `calendar.freebusy`; no event details or writes are allowed.
-- **Phase 3:** a separate Agent Holds calendar with expiring tentative events and
+- **Phase 2 — current:** same-Gateway candidate → owner decision → Guest confirmation
+  loop. Guest remains minimal and no Calendar or Node source is consulted.
+- **Phase 3:** cross-Gateway A2A plus read-only Google Calendar FreeBusy. The same
+  typed capability becomes an A2A Skill; Calendar adds authoritative conflict checks.
+- **Phase 4:** a separate Agent Holds calendar with expiring tentative events and
   approval before final booking or external reply.
-- **Later:** email/calendar invitations, cross-system agent negotiation, and narrowly
-  scoped provisional answers. Group monitoring is dropped from the current roadmap.
+- **Later:** email invitations, Apple/iCloud adapters, and narrowly scoped provisional
+  answers. Group monitoring remains dropped.
 
 ## Continue / drop gate
 
@@ -125,6 +126,7 @@ access without a defensible benefit.
 ## Repository map
 
 - [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) — scope and acceptance criteria
+- [CONTEXT.md](CONTEXT.md) — canonical domain language
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — components and state machine
 - [docs/CONVERSATION_FIRST_WORKFLOW.md](docs/CONVERSATION_FIRST_WORKFLOW.md) — calendar-as-view and messaging-as-control design
 - [docs/RESEARCH.md](docs/RESEARCH.md) — existing-solution preflight

@@ -63,29 +63,43 @@ This proves tool visibility and a bounded synthetic handoff. It does **not**
 prove Google Calendar access, real availability, owner approval callbacks,
 external replies, or A2A interoperability.
 
-## Read-only Calendar boundary (Phase 2)
+## Same-Gateway owner-decision loop (Phase 2)
 
-Implementation completed on 2026-09-16; live OAuth proof is pending.
+Implementation and live same-Gateway proof completed on 2026-09-16 with
+OpenClaw 2026.9.4.
 
-Proven with mocked Google responses:
+Proven with deterministic plugin tests:
 
-- the plugin calls only `oauth2.googleapis.com/token` and Calendar `freeBusy`;
-- FreeBusy intervals are converted to derived slots and are never returned;
-- overlapping candidate slots are excluded;
-- output remains `authority=tentative` and `source=google_freebusy`;
-- event title, attendee, location, description, and notes are not part of the
-  adapter's response type;
-- OAuth and Calendar failures fail closed; and
-- the live tool is absent unless Google Calendar config exists and the same
-  Guest agent/session allowlist passes.
+- candidate proposals are idempotent and explicitly use
+  `authority=candidate`, `source=policy_only`;
+- candidate output does not claim Calendar or Node verification;
+- only an explicit owner decision can produce `authority=confirmed`;
+- confirmation retains only the selected slot;
+- decline and expiry remove all candidate slots;
+- one Guest session cannot retrieve another session's proposal; and
+- all three tools are optional and intended for separate Guest/Owner allowlists.
 
-Pending live evidence:
+Live runtime evidence:
 
-- Google OAuth consent with scope exactly `calendar.freebusy`;
-- SecretRef resolution for client ID, client secret, and refresh token;
-- a real FreeBusy probe with no event-detail disclosure;
-- Main and non-allowlisted Guest tool-unavailable probes after restart; and
-- removal of the synthetic tool from Guest's runtime allowlist.
+- Main could not see or call the Guest-only candidate tool;
+- a non-allowlisted Guest session could not see either Guest liaison tool;
+- the allowlisted Guest created a `pending_owner` proposal with
+  `authority=candidate` and `source=policy_only`;
+- the result explicitly stated that neither Calendar nor Node data was checked;
+- the owner event was queued only to the fixed Main session;
+- Main recorded an explicit approval for one correlated slot;
+- confirmation retained only the selected slot and queued a result to the
+  originating Guest session;
+- the originating Guest retrieved `authority=confirmed`; and
+- a different Guest session could not retrieve or act on the proposal.
 
-Phase 2 still performs no Calendar writes, holds, confirmations, deletions, or
-external replies.
+The Gateway-wide generic session surface was also reduced: session visibility is
+now agent-scoped and generic agent-to-agent messaging is disabled. The liaison
+plugin does not depend on either capability. A post-change deep security audit no
+longer reports cross-agent session access.
+
+Process-local proposal state intentionally fails closed after a Gateway restart;
+durable recovery remains deferred until a storage design is selected and tested.
+
+Google Calendar OAuth/FreeBusy and cross-Gateway A2A are deferred to Phase 3.
+No refresh token was obtained during the paused setup; no Calendar access is active.

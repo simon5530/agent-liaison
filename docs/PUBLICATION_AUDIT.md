@@ -18,9 +18,14 @@ Last verified: 2026-09-16
 - Commit history rebuilt as a sanitized public baseline using a GitHub noreply address.
 - No real calendar records, messages, identities, screenshots, archives, logs,
   credentials, or private configuration included.
-- The repository contains design documentation and a standard-library-only Python
-  prototype; no runtime dependency or bundled third-party asset requires an
-  additional license notice.
+- The repository contains design documentation, a standard-library-only Python
+  prototype, and a small OpenClaw TypeScript plugin. NPM runtime and development
+  dependency audits reported zero known vulnerabilities; no third-party asset is
+  bundled.
+- Live verification used only synthetic scheduling data. No Google refresh token
+  was obtained, and no Calendar or Node access is active.
+- OpenClaw session visibility is agent-scoped and generic agent-to-agent messaging
+  is disabled; the broker uses only its three typed tools.
 - License: MIT.
 - Local Markdown links resolved.
 - GitHub Secret Scanning and Push Protection enabled.
@@ -29,5 +34,6 @@ Last verified: 2026-09-16
 ## Residual limitations
 
 - Pattern scanning cannot prove the absence of every possible sensitive semantic detail.
-- Phase 1 proves only the synthetic policy core. Live channel, calendar, and A2A
-  adapters remain intentionally unverified and out of the current trust boundary.
+- Phase 1 proves the synthetic policy core. Phase 2 adds a process-local,
+  same-Gateway owner-decision loop. Calendar, Node, and cross-Gateway A2A adapters
+  remain intentionally outside the current trust boundary.

@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
-import entry, {
-  buildSyntheticProposal,
-  deriveAvailableSlots,
-  queryGoogleFreeBusy,
-} from "./index.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { getToolPluginMetadata } from "openclaw/plugin-sdk/tool-plugin";
+import entry, {
+  createCandidateProposal,
+  getProposalStatus,
+  recordOwnerDecision,
+  resetProposalStoreForTests,
+} from "./index.js";
 
 const request = {
   startDate: "2026-09-21",
@@ -18,76 +19,83 @@ const request = {
 };
 
 describe("agent-liaison", () => {
-  it("declares only the bounded optional tool", () => {
+  beforeEach(() => resetProposalStoreForTests());
+
+  it("declares only the bounded same-Gateway tools", () => {
     const metadata = getToolPluginMetadata(entry);
     expect(metadata?.tools.map((tool) => tool.name)).toEqual([
-      "request_synthetic_availability",
-      "request_readonly_availability",
+      "request_candidate_times",
+      "check_candidate_status",
+      "record_owner_scheduling_decision",
     ]);
     expect(metadata?.tools.every((tool) => tool.optional)).toBe(true);
   });
 
-  it("returns deterministic identifiers and synthetic tentative slots", () => {
+  it("creates idempotent policy-only candidates without claiming availability", () => {
     const now = new Date("2026-09-16T01:00:00Z");
-    const first = buildSyntheticProposal(request, now);
-    const retry = buildSyntheticProposal(request, now);
+    const first = createCandidateProposal(request, "guest-session", now);
+    const retry = createCandidateProposal(request, "guest-session", now);
     expect(first.proposalId).toBe(retry.proposalId);
-    expect(first.authority).toBe("tentative");
-    expect(first.source).toBe("synthetic");
+    expect(first.state).toBe("pending_owner");
+    expect(first.authority).toBe("candidate");
+    expect(first.source).toBe("policy_only");
     expect(first.slots).toHaveLength(3);
-    expect(first.slots[0]?.timezone).toBe("Asia/Taipei");
     expect(first.slots[0]?.weekday).toBe("Monday");
   });
 
   it("fails closed for an oversized range", () => {
-    expect(() =>
-      buildSyntheticProposal({ ...request, endDate: "2026-10-20" }),
-    ).toThrow(/0 and 14 days/);
+    expect(() => createCandidateProposal(
+      { ...request, endDate: "2026-10-20" },
+      "guest-session",
+    )).toThrow(/0 and 14 days/);
   });
 
-  it("excludes every slot that overlaps a busy interval", () => {
-    const slots = deriveAvailableSlots(request, [
-      { start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" },
-    ]);
-    expect(slots[0]?.start).toBe("2026-09-21T12:00:00.000Z");
-    expect(slots).toHaveLength(3);
+  it("confirms only the owner-selected slot", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    const result = recordOwnerDecision(
+      proposal.proposalId,
+      "approve",
+      "slot-2",
+      new Date("2026-09-16T01:10:00Z"),
+    );
+    expect(result.proposal.state).toBe("confirmed");
+    expect(result.proposal.authority).toBe("confirmed");
+    expect(result.proposal.slots).toEqual([result.proposal.selectedSlot]);
+    expect(result.proposal.selectedSlot?.slotId).toBe("slot-2");
   });
 
-  it("queries only OAuth token and Calendar FreeBusy endpoints", async () => {
-    const calls: Array<{ url: string; init?: RequestInit }> = [];
-    const fakeFetch = async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input);
-      calls.push({ url, init });
-      if (url.includes("oauth2.googleapis.com")) {
-        return new Response(JSON.stringify({ access_token: "redacted-access-token" }), { status: 200 });
-      }
-      return new Response(JSON.stringify({
-        calendars: { primary: { busy: [
-          { start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" },
-        ] } },
-      }), { status: 200 });
-    };
-    const result = await queryGoogleFreeBusy(request, {
-      clientId: "client-id",
-      clientSecret: "client-secret",
-      refreshToken: "refresh-token",
-      calendarId: "primary",
-    }, fakeFetch as typeof fetch, new Date("2026-09-16T01:00:00Z"));
-    expect(calls.map((call) => call.url)).toEqual([
-      "https://oauth2.googleapis.com/token",
-      "https://www.googleapis.com/calendar/v3/freeBusy",
-    ]);
-    expect(calls[1]?.init?.method).toBe("POST");
-    expect(String((calls[1]?.init?.headers as Record<string, string>).authorization)).toBe("Bearer redacted-access-token");
-    expect(result.source).toBe("google_freebusy");
-    expect(result.authority).toBe("tentative");
-    expect(result.slots[0]?.start).toBe("2026-09-21T12:00:00.000Z");
+  it("declines without retaining candidate slots", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    const result = recordOwnerDecision(
+      proposal.proposalId,
+      "decline",
+      undefined,
+      new Date("2026-09-16T01:10:00Z"),
+    );
+    expect(result.proposal.state).toBe("declined");
+    expect(result.proposal.slots).toEqual([]);
   });
 
-  it("fails closed when OAuth refresh fails", async () => {
-    const fakeFetch = async () => new Response("denied", { status: 401 });
-    await expect(queryGoogleFreeBusy(request, {
-      clientId: "client-id", clientSecret: "client-secret", refreshToken: "refresh-token",
-    }, fakeFetch as typeof fetch)).rejects.toThrow(/OAuth refresh failed/);
+  it("expires a candidate before an owner decision", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    const expired = getProposalStatus(
+      proposal.proposalId,
+      "guest-session",
+      new Date("2026-09-16T03:01:00Z"),
+    );
+    expect(expired.state).toBe("expired");
+    expect(expired.slots).toEqual([]);
+    expect(() => recordOwnerDecision(
+      proposal.proposalId,
+      "approve",
+      "slot-1",
+      new Date("2026-09-16T03:02:00Z"),
+    )).toThrow(/not pending/);
+  });
+
+  it("does not disclose a proposal to another Guest session", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    expect(() => getProposalStatus(proposal.proposalId, "other-guest-session"))
+      .toThrow(/not found for this requester/);
   });
 });

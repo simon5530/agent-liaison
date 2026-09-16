@@ -2,9 +2,10 @@
 
 ## Principle
 
-Keep private calendar access behind a narrow availability boundary. The
-conversation-facing agent receives derived facts such as “busy” or “three valid
-slots,” not raw calendar objects.
+Keep authority and private context behind a narrow liaison boundary. In the current
+phase the conversation-facing agent receives only its own memory, requester-provided
+constraints, candidate status, and the owner's final decision. Calendar and Node
+sources are not consulted.
 
 ```mermaid
 flowchart TB
@@ -22,21 +23,20 @@ flowchart TB
     Inbox[Owner conversation inbox]
   end
 
-  subgraph PrivateBoundary[Private calendar boundary]
-    FreeBusy[Free/busy adapter]
-    Preferences[(Working preferences)]
-    Calendar[(Calendar provider)]
-    Holds[(Agent Holds calendar)]
+  subgraph PrivateBoundary[Owner authority boundary]
+    Preferences[(Guest-visible policy context)]
+    Decision[Explicit owner decision]
+    Future[(Future: Calendar + Node adapters)]
   end
 
   User --> Channel --> Identity --> Policy
-  Calendar --> FreeBusy --> Policy
   Preferences --> Policy
   Policy --> State --> Channel
   Policy -->|approval required| Owner
   Owner --> State
   State --> Inbox
-  State -->|temporary block| Holds
+  Decision --> State
+  Future -. later .-> Policy
   Policy --> Audit
   State --> Audit
 ```
@@ -66,10 +66,10 @@ authoritative calendar.
 
 ## Why a dedicated boundary
 
-The existing public-facing `guest` agent should not receive general calendar
-access. A future OpenClaw implementation should expose a narrow capability such
-as `query_availability(range, duration, requester_class)` and keep raw event data
-inside the owner-controlled service or a dedicated scheduling agent.
+The public-facing `guest` agent does not receive general Calendar, Node, owner
+memory, or transcript access. It receives a narrow capability that creates a
+candidate proposal from bounded fields. Future source adapters remain behind the
+owner-controlled boundary and return only derived facts.
 
 ## Reliability patterns
 
@@ -96,19 +96,18 @@ sequenceDiagram
     participant B as Liaison broker
     participant M as Owner agent
     participant O as Owner
-    participant C as Calendar
 
     R->>G: ask for available times
     G->>B: structured request
     B->>M: validated candidate
-    M->>C: free/busy + temporary holds
-    M-->>G: labeled tentative options
+    M-->>G: labeled candidate options
     M->>O: approval packet
     O->>M: select one option
-    M->>C: recheck, confirm one, delete sibling holds
     M-->>G: confirmed result
     G-->>R: confirmation
 ```
 
-The broker accepts scheduling fields rather than arbitrary prompts. Generic session
-messaging would enlarge the prompt-injection and transcript-access surface.
+The broker accepts scheduling fields rather than arbitrary prompts. Candidate times
+are derived from explicit constraints and Guest-visible policy only; they are not
+claims of real availability. Generic session messaging would enlarge the
+prompt-injection and transcript-access surface.
