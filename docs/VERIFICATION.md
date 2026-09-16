@@ -62,3 +62,30 @@ Verified on OpenClaw 2026.9.4 with synthetic data:
 This proves tool visibility and a bounded synthetic handoff. It does **not**
 prove Google Calendar access, real availability, owner approval callbacks,
 external replies, or A2A interoperability.
+
+## Read-only Calendar boundary (Phase 2)
+
+Implementation completed on 2026-09-16; live OAuth proof is pending.
+
+Proven with mocked Google responses:
+
+- the plugin calls only `oauth2.googleapis.com/token` and Calendar `freeBusy`;
+- FreeBusy intervals are converted to derived slots and are never returned;
+- overlapping candidate slots are excluded;
+- output remains `authority=tentative` and `source=google_freebusy`;
+- event title, attendee, location, description, and notes are not part of the
+  adapter's response type;
+- OAuth and Calendar failures fail closed; and
+- the live tool is absent unless Google Calendar config exists and the same
+  Guest agent/session allowlist passes.
+
+Pending live evidence:
+
+- Google OAuth consent with scope exactly `calendar.freebusy`;
+- SecretRef resolution for client ID, client secret, and refresh token;
+- a real FreeBusy probe with no event-detail disclosure;
+- Main and non-allowlisted Guest tool-unavailable probes after restart; and
+- removal of the synthetic tool from Guest's runtime allowlist.
+
+Phase 2 still performs no Calendar writes, holds, confirmations, deletions, or
+external replies.

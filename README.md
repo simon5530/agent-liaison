@@ -6,9 +6,9 @@
 
 ## Status
 
-**Decision: CONTINUE. Phase 1 synthetic broker implemented.** The current prototype
-runs locally with deterministic fixtures. It has no live calendar access, sends no
-messages, and cannot make external commitments.
+**Decision: CONTINUE. Phase 1 is live with synthetic data; Phase 2's read-only
+FreeBusy adapter is implemented and awaiting OAuth proof.** It sends no external
+messages, performs no Calendar writes, and cannot make external commitments.
 
 ## Try the bounded prototype
 
@@ -100,7 +100,9 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 - **Phase 0 — complete:** requirements, threat model, standards, and mock examples.
 - **Phase 1 — implemented:** local CLI with synthetic calendars and preferences;
   no external side effects. See [verification evidence](docs/VERIFICATION.md).
-- **Phase 2:** read-only Google Calendar free/busy plus private LINE recommendations.
+- **Phase 2 — implementation complete, live proof pending:** read-only Google
+  Calendar FreeBusy plus a private owner notification. OAuth is limited to
+  `calendar.freebusy`; no event details or writes are allowed.
 - **Phase 3:** a separate Agent Holds calendar with expiring tentative events and
   approval before final booking or external reply.
 - **Later:** email/calendar invitations, cross-system agent negotiation, and narrowly

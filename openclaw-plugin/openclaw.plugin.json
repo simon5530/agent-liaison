@@ -1,8 +1,8 @@
 {
   "id": "agent-liaison",
   "name": "Agent Liaison",
-  "description": "Expose one bounded synthetic scheduling request to an allowlisted Guest session.",
-  "version": "0.1.0",
+  "description": "Expose bounded scheduling availability to an allowlisted Guest session.",
+  "version": "0.2.0",
   "configSchema": {
     "type": "object",
     "required": [
@@ -11,8 +11,7 @@
     ],
     "properties": {
       "ownerSessionKey": {
-        "type": "string",
-        "description": "Fixed Main session that receives redacted approval events."
+        "type": "string"
       },
       "allowedRequesterSessionKeys": {
         "type": "array",
@@ -20,6 +19,34 @@
           "type": "string"
         },
         "minItems": 1
+      },
+      "googleCalendar": {
+        "type": "object",
+        "required": [
+          "clientId",
+          "clientSecret",
+          "refreshToken"
+        ],
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "clientSecret": {
+            "type": "string",
+            "minLength": 1
+          },
+          "refreshToken": {
+            "type": "string",
+            "minLength": 1
+          },
+          "calendarId": {
+            "type": "string",
+            "minLength": 1,
+            "default": "primary"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "additionalProperties": false
@@ -29,12 +56,26 @@
   },
   "contracts": {
     "tools": [
-      "request_synthetic_availability"
+      "request_synthetic_availability",
+      "request_readonly_availability"
     ]
   },
   "toolMetadata": {
     "request_synthetic_availability": {
       "optional": true
+    },
+    "request_readonly_availability": {
+      "optional": true
+    }
+  },
+  "configContracts": {
+    "secretInputs": {
+      "bundledDefaultEnabled": false,
+      "paths": [
+        { "path": "googleCalendar.clientId", "expected": "string", "ownerKind": "capability" },
+        { "path": "googleCalendar.clientSecret", "expected": "string", "ownerKind": "capability" },
+        { "path": "googleCalendar.refreshToken", "expected": "string", "ownerKind": "capability" }
+      ]
     }
   }
 }

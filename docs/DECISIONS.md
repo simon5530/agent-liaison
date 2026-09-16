@@ -91,9 +91,22 @@
 - **Reason:** Direct conversations satisfy the initial personal workflow with less
   privacy exposure and avoid group-bot constraints.
 
+## ADR-011: Use read-only FreeBusy before Calendar writes
+
+- **Status:** accepted
+- **Date:** 2026-09-16
+- **Decision:** Phase 2 queries only Google Calendar FreeBusy with the
+  `calendar.freebusy` OAuth scope. It returns derived slots and never reads event
+  resources or writes holds.
+- **Reason:** Real availability can be validated without granting access to event
+  titles, attendees, locations, notes, or mutation APIs.
+- **Tradeoff:** OpenClaw needs its own Google OAuth client; credentials from a
+  ChatGPT/Codex connector cannot cross the runtime boundary.
+
 ## Open decisions
 
-- Google Calendar only versus a provider-neutral adapter after Phase 1.
+- Whether a provider-neutral availability interface is needed after the Google
+  FreeBusy path is proven.
 - Which policy tier may create a private hold or send a labeled tentative reply
   without asking first.
 - How requester identity and trust tiers map across LINE, email, and other channels.

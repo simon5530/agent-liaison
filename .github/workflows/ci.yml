@@ -20,3 +20,19 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: PYTHONPATH=src python -m unittest discover -s tests -v
       - run: PYTHONPATH=src python -m agent_liaison.demo
+
+  openclaw-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: openclaw-plugin/package-lock.json
+      - run: npm ci
+        working-directory: openclaw-plugin
+      - run: npm test
+        working-directory: openclaw-plugin
+      - run: npm run build
+        working-directory: openclaw-plugin
