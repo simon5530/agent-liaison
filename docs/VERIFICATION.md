@@ -103,3 +103,36 @@ durable recovery remains deferred until a storage design is selected and tested.
 
 Google Calendar OAuth/FreeBusy and cross-Gateway A2A are deferred to Phase 3.
 No refresh token was obtained during the paused setup; no Calendar access is active.
+
+## Main-memory context boundary (Phase 2.1)
+
+Implemented and live-tested on 2026-09-17 with OpenClaw 2026.9.4.
+
+Deterministic plugin tests prove:
+
+- a new request starts in `awaiting_context` without precomputed slots;
+- oversized date ranges and out-of-window candidates fail closed;
+- `main_memory` requires a memory-derived allowlisted context-basis label;
+- `policy_only` cannot claim a memory-derived basis;
+- only one to three unique, correctly sized candidate intervals are accepted;
+- no memory excerpt exists in the proposal schema or derived output; and
+- expiry, owner confirmation, decline, and requester-session isolation still hold.
+
+Live runtime proof:
+
+- Main could not see the Guest-only request tool;
+- a non-allowlisted Guest session could not see the liaison request tool;
+- the allowlisted Guest created a request in `awaiting_context` and queued it only to
+  the fixed Main session;
+- Main searched owner memory for relevant scheduling preferences and found none that
+  justified a time choice;
+- Main therefore submitted three bounded candidates with `source=policy_only` and
+  `contextBasis=request_constraints_only` rather than fabricating a preference;
+- the originating Guest retrieved the correlated `pending_owner` candidates;
+- Main declined the synthetic verification proposal; and
+- the same Guest retrieved `declined` with all candidate slots removed.
+
+This proves the context-review control flow and its fail-closed fallback. It does not
+yet prove a `main_memory` live result because no explicit durable scheduling preference
+was present. The `main_memory` branch is covered by deterministic tests. Proposal state
+remains process-local and is lost on Gateway restart.

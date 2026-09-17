@@ -5,6 +5,7 @@ import entry, {
   getProposalStatus,
   recordOwnerDecision,
   resetProposalStoreForTests,
+  submitContextualCandidates,
 } from "./index.js";
 
 const request = {
@@ -25,22 +26,23 @@ describe("agent-liaison", () => {
     const metadata = getToolPluginMetadata(entry);
     expect(metadata?.tools.map((tool) => tool.name)).toEqual([
       "request_candidate_times",
+      "submit_contextual_candidate_times",
       "check_candidate_status",
       "record_owner_scheduling_decision",
     ]);
     expect(metadata?.tools.every((tool) => tool.optional)).toBe(true);
   });
 
-  it("creates idempotent policy-only candidates without claiming availability", () => {
+  it("creates an idempotent context-review request without precomputed candidates", () => {
     const now = new Date("2026-09-16T01:00:00Z");
     const first = createCandidateProposal(request, "guest-session", now);
     const retry = createCandidateProposal(request, "guest-session", now);
     expect(first.proposalId).toBe(retry.proposalId);
-    expect(first.state).toBe("pending_owner");
+    expect(first.state).toBe("awaiting_context");
     expect(first.authority).toBe("candidate");
-    expect(first.source).toBe("policy_only");
-    expect(first.slots).toHaveLength(3);
-    expect(first.slots[0]?.weekday).toBe("Monday");
+    expect(first.source).toBe("unreviewed");
+    expect(first.contextBasis).toEqual([]);
+    expect(first.slots).toEqual([]);
   });
 
   it("fails closed for an oversized range", () => {
@@ -52,6 +54,10 @@ describe("agent-liaison", () => {
 
   it("confirms only the owner-selected slot", () => {
     const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" },
+      { start: "2026-09-22T10:00:00.000Z", end: "2026-09-22T12:00:00.000Z" },
+    ], "main_memory", ["owner_scheduling_preferences"], new Date("2026-09-16T01:05:00Z"));
     const result = recordOwnerDecision(
       proposal.proposalId,
       "approve",
@@ -66,6 +72,9 @@ describe("agent-liaison", () => {
 
   it("declines without retaining candidate slots", () => {
     const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" },
+    ], "policy_only", ["request_constraints_only"], new Date("2026-09-16T01:05:00Z"));
     const result = recordOwnerDecision(
       proposal.proposalId,
       "decline",
@@ -76,7 +85,7 @@ describe("agent-liaison", () => {
     expect(result.proposal.slots).toEqual([]);
   });
 
-  it("expires a candidate before an owner decision", () => {
+  it("expires while awaiting context and blocks later submission", () => {
     const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
     const expired = getProposalStatus(
       proposal.proposalId,
@@ -85,12 +94,32 @@ describe("agent-liaison", () => {
     );
     expect(expired.state).toBe("expired");
     expect(expired.slots).toEqual([]);
-    expect(() => recordOwnerDecision(
+    expect(() => submitContextualCandidates(
       proposal.proposalId,
-      "approve",
-      "slot-1",
+      [{ start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" }],
+      "policy_only",
+      ["request_constraints_only"],
       new Date("2026-09-16T03:02:00Z"),
-    )).toThrow(/not pending/);
+    )).toThrow(/not awaiting/);
+  });
+
+  it("accepts bounded memory-assisted candidates without exposing memory text", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    const result = submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-21T10:00:00.000Z", end: "2026-09-21T12:00:00.000Z" },
+      { start: "2026-09-22T10:00:00.000Z", end: "2026-09-22T12:00:00.000Z" },
+    ], "main_memory", ["owner_scheduling_preferences", "owner_time_boundaries"], new Date("2026-09-16T01:05:00Z"));
+    expect(result.proposal.state).toBe("pending_owner");
+    expect(result.proposal.source).toBe("main_memory");
+    expect(result.proposal.slots).toHaveLength(2);
+    expect(JSON.stringify(result.proposal)).not.toContain("memory excerpt");
+  });
+
+  it("rejects candidates outside the typed request boundary", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    expect(() => submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-21T08:00:00.000Z", end: "2026-09-21T10:00:00.000Z" },
+    ], "policy_only", ["request_constraints_only"], new Date("2026-09-16T01:05:00Z"))).toThrow(/daily window/);
   });
 
   it("does not disclose a proposal to another Guest session", () => {

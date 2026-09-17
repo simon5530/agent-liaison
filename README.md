@@ -6,8 +6,8 @@
 
 ## Status
 
-**Decision: CONTINUE. Phase 1 proves the policy core; Phase 2 now focuses on the
-same-Gateway owner-approval loop.** Google Calendar and cross-Gateway A2A are
+**Decision: CONTINUE. Phase 1 proves the policy core; Phase 2 proves the
+same-Gateway owner-approval loop; Phase 2.1 adds bounded Main-memory context.** Google Calendar and cross-Gateway A2A are
 intentionally deferred until local communication, authority, expiry, and confirmation
 are reliable.
 
@@ -57,9 +57,11 @@ interruptions without increasing privacy incidents or false commitments.
 ## First bounded workflow
 
 1. A requester submits a meeting window, duration, participants, and urgency.
-2. The guest uses only its own memory and the requester's explicit constraints.
-3. A policy engine generates up to three candidate times without claiming availability.
-4. The broker sends the same proposal to the owner agent and records expiry.
+2. The guest sends only typed constraints to a fixed owner workflow.
+3. Main searches only for explicit scheduling preferences or time boundaries in
+   owner memory. If none exist, it falls back to request constraints alone.
+4. Main submits up to three bounded candidate times without exposing memory text or
+   claiming calendar availability; the broker records expiry.
 5. The human owner approves one candidate, proposes an alternative, or declines.
 6. Only the approved result is communicated as confirmed.
 
@@ -100,8 +102,11 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 - **Phase 0 — complete:** requirements, threat model, standards, and mock examples.
 - **Phase 1 — implemented:** local CLI with synthetic calendars and preferences;
   no external side effects. See [verification evidence](docs/VERIFICATION.md).
-- **Phase 2 — current:** same-Gateway candidate → owner decision → Guest confirmation
-  loop. Guest remains minimal and no Calendar or Node source is consulted.
+- **Phase 2 — complete:** same-Gateway candidate → owner decision → Guest confirmation
+  loop with typed tools and agent-scoped isolation.
+- **Phase 2.1 — implemented:** Main may use explicit scheduling preferences and time
+  boundaries from owner memory to shape candidates. Missing preferences fail closed
+  to request-only candidates; no memory excerpt crosses the broker.
 - **Phase 3:** cross-Gateway A2A plus read-only Google Calendar FreeBusy. The same
   typed capability becomes an A2A Skill; Calendar adds authoritative conflict checks.
 - **Phase 4:** a separate Agent Holds calendar with expiring tentative events and

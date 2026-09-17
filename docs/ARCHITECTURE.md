@@ -24,13 +24,13 @@ flowchart TB
   end
 
   subgraph PrivateBoundary[Owner authority boundary]
-    Preferences[(Guest-visible policy context)]
+    Preferences[(Owner memory: explicit scheduling preferences)]
     Decision[Explicit owner decision]
     Future[(Future: Calendar + Node adapters)]
   end
 
   User --> Channel --> Identity --> Policy
-  Preferences --> Policy
+  Preferences -->|Main-only retrieval| Policy
   Policy --> State --> Channel
   Policy -->|approval required| Owner
   Owner --> State
@@ -99,15 +99,20 @@ sequenceDiagram
 
     R->>G: ask for available times
     G->>B: structured request
-    B->>M: validated candidate
-    M-->>G: labeled candidate options
+    B->>M: validated typed request
+    M->>M: bounded memory search
+    M->>B: 1-3 candidates + safe context labels
+    B-->>G: labeled candidate options
     M->>O: approval packet
     O->>M: select one option
     M-->>G: confirmed result
     G-->>R: confirmation
 ```
 
-The broker accepts scheduling fields rather than arbitrary prompts. Candidate times
-are derived from explicit constraints and Guest-visible policy only; they are not
-claims of real availability. Generic session messaging would enlarge the
-prompt-injection and transcript-access surface.
+The broker accepts scheduling fields rather than arbitrary prompts. Main—not the
+plugin or Guest—may search owner memory for explicit scheduling preferences or time
+boundaries. It returns candidate times plus a small allowlisted context-basis label;
+memory text and unrelated facts never cross the broker. If no applicable preference
+exists, Main uses `policy_only` rather than inventing one. Candidates are not claims
+of real availability. Generic session messaging would enlarge the prompt-injection
+and transcript-access surface.

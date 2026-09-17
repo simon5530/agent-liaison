@@ -52,6 +52,20 @@ candidate slots while the owner receives the same choices for approval.
 - A confirmed result contains only the owner-selected slot.
 - Proposal state is currently process-local and must fail closed after a restart.
 
+## Phase 2.1: Main-memory-assisted candidates
+
+- A Guest request first enters `awaiting_context` with no candidate slots.
+- Main searches only owner memory for explicit scheduling preferences or time
+  boundaries relevant to the typed request.
+- Main submits one to three candidates through `submit_contextual_candidate_times`.
+- The broker validates date range, duration, daily window, duplicates, source, and
+  context-basis labels before changing the proposal to `pending_owner`.
+- `source=main_memory` requires at least one memory-derived allowlisted basis;
+  otherwise Main must use `source=policy_only`.
+- No memory excerpt, citation, private rationale, Calendar data, or Node data may be
+  returned to Guest.
+- Owner approval remains mandatory; memory context cannot create a commitment.
+
 ## Future connected requirements
 
 - Google Calendar becomes the initial authoritative schedule store when the A2A
