@@ -51,6 +51,12 @@ candidate slots while the owner receives the same choices for approval.
 - Main records and relays the decision; Main does not infer or substitute the decision.
 - A confirmed result contains only the owner-selected slot.
 - Proposal state is currently process-local and must fail closed after a restart.
+- A Guest request must schedule an immediate owner turn on the fixed Main direct
+  session; queue acceptance alone is not delivery proof.
+- A still-pending proposal schedules a two-hour reminder. A recorded owner decision
+  cancels that reminder.
+- When the owner sends another message while a proposal remains pending, Main should
+  include the pending decision in its next reply so unrelated work cannot hide it.
 
 ## Phase 2.1: Main-memory-assisted candidates
 

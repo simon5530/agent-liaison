@@ -67,6 +67,7 @@ export type Slot = {
 
 export type Proposal = {
   proposalId: string;
+  createdAt: string;
   state: "awaiting_context" | "pending_owner" | "confirmed" | "declined" | "expired";
   authority: "candidate" | "confirmed";
   source: "unreviewed" | "policy_only" | "main_memory";
@@ -85,6 +86,12 @@ type StoredProposal = {
 };
 
 const proposalStore = new Map<string, StoredProposal>();
+const PROPOSAL_TTL_MS = 8 * 60 * 60_000;
+const OWNER_REMINDER_DELAY_MS = 2 * 60 * 60_000;
+
+function reminderTag(proposalId: string): string {
+  return `liaison-reminder-${proposalId}`;
+}
 
 function minutes(value: string): number {
   const [hour, minute] = value.split(":").map(Number);
@@ -211,11 +218,12 @@ export function createCandidateProposal(
 
   const proposal: Proposal = {
     proposalId,
+    createdAt: now.toISOString(),
     state: "awaiting_context",
     authority: "candidate",
     source: "unreviewed",
     contextBasis: [],
-    expiresAt: new Date(now.getTime() + 2 * 60 * 60_000).toISOString(),
+    expiresAt: new Date(now.getTime() + PROPOSAL_TTL_MS).toISOString(),
     slots: [],
   };
   proposalStore.set(proposalId, { proposal, request, requesterSessionKey });
@@ -258,6 +266,12 @@ export function getProposalStatus(
   if (!record || record.requesterSessionKey !== requesterSessionKey) {
     throw new Error("proposal not found for this requester");
   }
+  return expire(record, now).proposal;
+}
+
+export function getOwnerProposalStatus(proposalId: string, now = new Date()): Proposal {
+  const record = proposalStore.get(proposalId);
+  if (!record) throw new Error("proposal not found");
   return expire(record, now).proposal;
 }
 
@@ -314,6 +328,18 @@ function ownerEventFor(proposal: Proposal, request: AvailabilityRequest): string
   ].join("\n");
 }
 
+function ownerReminderFor(proposal: Proposal): string {
+  return [
+    "[Agent Liaison pending-owner reminder check]",
+    `Correlation: ${proposal.proposalId}`,
+    `Created: ${proposal.createdAt}; expires: ${proposal.expiresAt}`,
+    "Call check_owner_candidate_status for this correlation ID.",
+    "If it is awaiting_context or pending_owner and the owner has not addressed it in later conversation context, send a concise reminder with the pending choices or processing state.",
+    "If it is confirmed, declined, or expired, or a later owner message already addressed it, reply with exactly NO_REPLY.",
+    "Never infer approval from silence.",
+  ].join("\n");
+}
+
 function candidateEventFor(proposal: Proposal): string {
   return [
     "[Agent Liaison candidate options]",
@@ -367,17 +393,32 @@ export default defineToolPlugin({
             const request = raw as AvailabilityRequest;
             const requesterSessionKey = toolContext.sessionKey as string;
             const proposal = createCandidateProposal(request, requesterSessionKey);
-            const queued = api.runtime.system.enqueueSystemEvent(ownerEventFor(proposal, request), {
+            const notification = await api.session.workflow.scheduleSessionTurn({
               sessionKey: config.ownerSessionKey,
-              contextKey: proposal.proposalId,
-              replace: true,
+              agentId: "main",
+              delayMs: 0,
+              deleteAfterRun: true,
+              deliveryMode: "announce",
+              name: `Agent Liaison owner review ${proposal.proposalId}`,
+              tag: `liaison-owner-${proposal.proposalId}`,
+              message: ownerEventFor(proposal, request),
             });
-            if (queued) api.runtime.system.requestHeartbeat({
-              source: "other",
-              intent: "event",
-              reason: "agent-liaison-candidate-request",
+            const reminder = await api.session.workflow.scheduleSessionTurn({
+              sessionKey: config.ownerSessionKey,
+              agentId: "main",
+              delayMs: OWNER_REMINDER_DELAY_MS,
+              deleteAfterRun: true,
+              deliveryMode: "announce",
+              name: `Agent Liaison pending reminder ${proposal.proposalId}`,
+              tag: reminderTag(proposal.proposalId),
+              message: ownerReminderFor(proposal),
             });
-            const details = { ok: true, proposal, ownerNotificationQueued: queued };
+            const details = {
+              ok: true,
+              proposal,
+              ownerNotificationScheduled: Boolean(notification),
+              ownerReminderScheduled: Boolean(reminder),
+            };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };
           },
         };
@@ -405,17 +446,21 @@ export default defineToolPlugin({
               contextBasis: Proposal["contextBasis"];
             };
             const result = submitContextualCandidates(proposalId, candidates, source, contextBasis);
-            const queued = api.runtime.system.enqueueSystemEvent(candidateEventFor(result.proposal), {
+            const notification = await api.session.workflow.scheduleSessionTurn({
               sessionKey: result.requesterSessionKey,
-              contextKey: `${proposalId}:contextual-candidates`,
-              replace: true,
+              agentId: "guest",
+              delayMs: 0,
+              deleteAfterRun: true,
+              deliveryMode: "announce",
+              name: `Agent Liaison candidate result ${proposalId}`,
+              tag: `liaison-guest-options-${proposalId}`,
+              message: candidateEventFor(result.proposal),
             });
-            if (queued) api.runtime.system.requestHeartbeat({
-              source: "other",
-              intent: "event",
-              reason: "agent-liaison-contextual-candidates",
-            });
-            const details = { ok: true, proposal: result.proposal, guestNotificationQueued: queued };
+            const details = {
+              ok: true,
+              proposal: result.proposal,
+              guestNotificationScheduled: Boolean(notification),
+            };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };
           },
         };
@@ -445,6 +490,29 @@ export default defineToolPlugin({
       },
     }),
     tool({
+      name: "check_owner_candidate_status",
+      label: "Check Owner Candidate Status",
+      description: "Check a proposal from the fixed owner session before sending a reminder.",
+      parameters: statusSchema,
+      optional: true,
+      factory({ config, toolContext }) {
+        if (!isOwner(toolContext, config.ownerSessionKey)) return null;
+        return {
+          name: "check_owner_candidate_status",
+          label: "Check Owner Candidate Status",
+          description: "Check a proposal from the fixed owner session before sending a reminder.",
+          parameters: statusSchema,
+          executionMode: "sequential",
+          async execute(_id: string, raw: unknown) {
+            const { proposalId } = raw as { proposalId: string };
+            const proposal = getOwnerProposalStatus(proposalId);
+            const details = { ok: true, proposal };
+            return { content: [{ type: "text", text: JSON.stringify(details) }], details };
+          },
+        };
+      },
+    }),
+    tool({
       name: "record_owner_scheduling_decision",
       label: "Record Owner Scheduling Decision",
       description: "Record the human owner's approval or decline for a pending candidate proposal.",
@@ -465,17 +533,25 @@ export default defineToolPlugin({
               selectedSlotId?: string;
             };
             const result = recordOwnerDecision(proposalId, decision, selectedSlotId);
-            const queued = api.runtime.system.enqueueSystemEvent(requesterEventFor(result.proposal), {
+            await api.session.workflow.unscheduleSessionTurnsByTag({
+              sessionKey: config.ownerSessionKey,
+              tag: reminderTag(proposalId),
+            });
+            const notification = await api.session.workflow.scheduleSessionTurn({
               sessionKey: result.requesterSessionKey,
-              contextKey: `${proposalId}:owner-decision`,
-              replace: true,
+              agentId: "guest",
+              delayMs: 0,
+              deleteAfterRun: true,
+              deliveryMode: "announce",
+              name: `Agent Liaison owner decision ${proposalId}`,
+              tag: `liaison-guest-decision-${proposalId}`,
+              message: requesterEventFor(result.proposal),
             });
-            if (queued) api.runtime.system.requestHeartbeat({
-              source: "other",
-              intent: "event",
-              reason: "agent-liaison-owner-decision",
-            });
-            const details = { ok: true, proposal: result.proposal, guestNotificationQueued: queued };
+            const details = {
+              ok: true,
+              proposal: result.proposal,
+              guestNotificationScheduled: Boolean(notification),
+            };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };
           },
         };

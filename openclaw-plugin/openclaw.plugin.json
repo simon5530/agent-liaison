@@ -2,7 +2,7 @@
   "id": "agent-liaison",
   "name": "Agent Liaison",
   "description": "Coordinate bounded, owner-context-assisted candidate times and owner decisions.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "configSchema": {
     "type": "object",
     "required": [
@@ -31,6 +31,7 @@
       "request_candidate_times",
       "submit_contextual_candidate_times",
       "check_candidate_status",
+      "check_owner_candidate_status",
       "record_owner_scheduling_decision"
     ]
   },
@@ -42,6 +43,9 @@
       "optional": true
     },
     "check_candidate_status": {
+      "optional": true
+    },
+    "check_owner_candidate_status": {
       "optional": true
     },
     "record_owner_scheduling_decision": {

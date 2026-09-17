@@ -136,3 +136,37 @@ This proves the context-review control flow and its fail-closed fallback. It doe
 yet prove a `main_memory` live result because no explicit durable scheduling preference
 was present. The `main_memory` branch is covered by deterministic tests. Proposal state
 remains process-local and is lost on Gateway restart.
+
+## Owner notification regression (Phase 2.1.1)
+
+Diagnosed on 2026-09-17 after a real Guest request returned a proposal ID but the
+owner received no review message.
+
+Observed failure:
+
+- the Guest tool had executed and the proposal existed;
+- the proposal later expired in `source=unreviewed`, proving Main never submitted
+  contextual candidates;
+- the plugin reported only that a system event was queued;
+- the fixed owner target was the root Home session, which retained a legacy channel
+  route; and
+- recurring heartbeat was disabled, so queue acceptance did not prove execution or
+  delivery.
+
+Regression coverage now proves that a Guest request schedules both:
+
+- an immediate Main owner turn with `deliveryMode=announce`; and
+- a two-hour pending-owner reminder turn.
+
+The plugin reports `ownerNotificationScheduled` and `ownerReminderScheduled`, not the
+ambiguous `queued` label. Contextual candidates and final owner decisions also use
+immediate session-turn scheduling. Recording a decision removes the pending reminder.
+The runtime owner destination must be the owner's direct Main session, never the
+non-deletable root Home session.
+
+Headless `openclaw agent` probes intentionally disable plugin global side effects in
+OpenClaw 2026.9.4. Such a probe can verify tool visibility and proposal creation, but
+it returns `ownerNotificationScheduled=false` and cannot prove LINE delivery. The
+plugin and Guest instructions therefore report scheduling only when the host returns
+a scheduler handle. A real inbound Guest LINE request is required for final live proof
+of the immediate owner turn and conditional two-hour reminder.
