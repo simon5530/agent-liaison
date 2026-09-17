@@ -74,6 +74,9 @@ Proven with deterministic plugin tests:
   `authority=candidate`, `source=policy_only`;
 - candidate output does not claim Calendar or Node verification;
 - only an explicit owner decision can produce `authority=confirmed`;
+- the owner can replace a candidate with a bounded alternative and confirm it in one
+  decision; the replacement must preserve duration and stay within 30 days of the
+  original request;
 - confirmation retains only the selected slot;
 - decline and expiry remove all candidate slots;
 - one Guest session cannot retrieve another session's proposal; and

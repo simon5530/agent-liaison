@@ -33,9 +33,10 @@ or enable generic cross-session messaging.
 - `check_candidate_status`: the same Guest session reads owner-decision status.
 - `check_owner_candidate_status`: the fixed Main owner session checks whether a
   proposal still needs attention before reminding the owner.
-- `record_owner_scheduling_decision`: Main records the human owner's approve or
-  decline action, cancels the pending reminder, and schedules the correlated result
-  for immediate delivery to Guest.
+- `record_owner_scheduling_decision`: Main records the human owner's approve,
+  revise-and-confirm, or decline action, cancels the pending reminder, and schedules
+  the correlated result for immediate delivery to Guest. A revision must preserve the
+  requested duration and remain within a bounded 30-day override window.
 
 Google Calendar OAuth/FreeBusy and cross-Gateway A2A are Phase 3. They will reuse the
 same domain states rather than bypassing the owner-decision boundary.

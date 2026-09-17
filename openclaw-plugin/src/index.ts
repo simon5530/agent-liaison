@@ -28,8 +28,12 @@ const statusSchema = Type.Object({
 
 const decisionSchema = Type.Object({
   proposalId: Type.String({ minLength: 16, maxLength: 96 }),
-  decision: Type.Union([Type.Literal("approve"), Type.Literal("decline")]),
+  decision: Type.Union([Type.Literal("approve"), Type.Literal("decline"), Type.Literal("revise")]),
   selectedSlotId: Type.Optional(Type.String({ pattern: "^slot-[1-3]$" })),
+  replacement: Type.Optional(Type.Object({
+    start: Type.String(),
+    end: Type.String(),
+  }, { additionalProperties: false })),
 }, { additionalProperties: false });
 
 const contextualCandidatesSchema = Type.Object({
@@ -277,9 +281,10 @@ export function getOwnerProposalStatus(proposalId: string, now = new Date()): Pr
 
 export function recordOwnerDecision(
   proposalId: string,
-  decision: "approve" | "decline",
+  decision: "approve" | "decline" | "revise",
   selectedSlotId?: string,
   now = new Date(),
+  replacement?: CandidateInput,
 ): { proposal: Proposal; requesterSessionKey: string } {
   const record = proposalStore.get(proposalId);
   if (!record) throw new Error("proposal not found");
@@ -288,6 +293,38 @@ export function recordOwnerDecision(
 
   if (decision === "decline") {
     record.proposal = { ...record.proposal, state: "declined", slots: [] };
+  } else if (decision === "revise") {
+    if (!replacement) throw new Error("revision requires a replacement time");
+    const start = new Date(replacement.start);
+    const end = new Date(replacement.end);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new Error("replacement must use valid ISO datetimes");
+    }
+    if (end.getTime() - start.getTime() !== record.request.durationMinutes * 60_000) {
+      throw new Error("replacement duration does not match request");
+    }
+    const requestStart = dateAtTaipei(record.request.startDate, 0);
+    const latestOwnerOverride = new Date(requestStart.getTime() + 30 * 86_400_000);
+    if (start < requestStart || start > latestOwnerOverride) {
+      throw new Error("replacement must be within 30 days of the requested start date");
+    }
+    const selected: Slot = {
+      slotId: "slot-1",
+      start: start.toISOString(),
+      end: end.toISOString(),
+      timezone: record.request.timezone,
+      weekday: new Intl.DateTimeFormat("en-US", {
+        timeZone: record.request.timezone,
+        weekday: "long",
+      }).format(start),
+    };
+    record.proposal = {
+      ...record.proposal,
+      state: "confirmed",
+      authority: "confirmed",
+      selectedSlot: selected,
+      slots: [selected],
+    };
   } else {
     const selected = record.proposal.slots.find((slot) => slot.slotId === selectedSlotId);
     if (!selected) throw new Error("approval requires a valid selectedSlotId");
@@ -527,12 +564,13 @@ export default defineToolPlugin({
           parameters: decisionSchema,
           executionMode: "sequential",
           async execute(_id: string, raw: unknown) {
-            const { proposalId, decision, selectedSlotId } = raw as {
+            const { proposalId, decision, selectedSlotId, replacement } = raw as {
               proposalId: string;
-              decision: "approve" | "decline";
+              decision: "approve" | "decline" | "revise";
               selectedSlotId?: string;
+              replacement?: CandidateInput;
             };
-            const result = recordOwnerDecision(proposalId, decision, selectedSlotId);
+            const result = recordOwnerDecision(proposalId, decision, selectedSlotId, new Date(), replacement);
             await api.session.workflow.unscheduleSessionTurnsByTag({
               sessionKey: config.ownerSessionKey,
               tag: reminderTag(proposalId),

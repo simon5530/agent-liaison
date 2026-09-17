@@ -86,6 +86,41 @@ describe("agent-liaison", () => {
     expect(result.proposal.slots).toEqual([]);
   });
 
+  it("lets the owner revise the time and confirm within a bounded override window", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-23T10:00:00.000Z", end: "2026-09-23T12:00:00.000Z" },
+    ], "main_memory", ["owner_scheduling_preferences"], new Date("2026-09-16T01:05:00Z"));
+    const result = recordOwnerDecision(
+      proposal.proposalId,
+      "revise",
+      undefined,
+      new Date("2026-09-16T01:10:00Z"),
+      { start: "2026-09-25T11:00:00.000Z", end: "2026-09-25T13:00:00.000Z" },
+    );
+    expect(result.proposal.state).toBe("confirmed");
+    expect(result.proposal.selectedSlot).toMatchObject({
+      slotId: "slot-1",
+      start: "2026-09-25T11:00:00.000Z",
+      end: "2026-09-25T13:00:00.000Z",
+      timezone: "Asia/Taipei",
+    });
+  });
+
+  it("rejects an owner revision with a mismatched duration", () => {
+    const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
+    submitContextualCandidates(proposal.proposalId, [
+      { start: "2026-09-23T10:00:00.000Z", end: "2026-09-23T12:00:00.000Z" },
+    ], "main_memory", ["owner_scheduling_preferences"], new Date("2026-09-16T01:05:00Z"));
+    expect(() => recordOwnerDecision(
+      proposal.proposalId,
+      "revise",
+      undefined,
+      new Date("2026-09-16T01:10:00Z"),
+      { start: "2026-09-25T11:00:00.000Z", end: "2026-09-25T12:00:00.000Z" },
+    )).toThrow(/duration/);
+  });
+
   it("expires while awaiting context and blocks later submission", () => {
     const proposal = createCandidateProposal(request, "guest-session", new Date("2026-09-16T01:00:00Z"));
     const expired = getProposalStatus(
