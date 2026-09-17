@@ -54,6 +54,24 @@ and approval. A new destination app is not part of the initial product hypothesi
 The business hypothesis is measurable: reduce coordination lead time and owner
 interruptions without increasing privacy incidents or false commitments.
 
+## Explainable policy learning
+
+The longer-term differentiator is not a hidden model that silently learns to manage
+someone's time. It is an **owner-reviewed policy learning loop**:
+
+1. start with conservative rules and frequent owner confirmation;
+2. record each approve, modify, decline, and revoke outcome as structured decision
+   evidence;
+3. periodically propose an interpretable decision tree, scorecard, or rule update;
+4. show the proposed policy and its supporting evidence to the owner;
+5. activate it only after approval, with versioning and rollback; and
+6. reduce interruptions only for decisions covered by a proven policy.
+
+This turns an often implicit personal scheduling style into a visible and
+governable policy without publishing private events or training an opaque personal
+profile. The learning loop is planned work; the current prototype records bounded
+decisions but does not yet infer or activate new policy automatically.
+
 ## First bounded workflow
 
 1. A requester submits a meeting window, duration, participants, and urgency.
@@ -107,6 +125,8 @@ See [research](docs/RESEARCH.md), [requirements](docs/REQUIREMENTS.md),
 - **Phase 2.1 — implemented:** Main may use explicit scheduling preferences and time
   boundaries from owner memory to shape candidates. Missing preferences fail closed
   to request-only candidates; no memory excerpt crosses the broker.
+- **Phase 2.2 — planned:** capture owner corrections as structured decision evidence,
+  propose an explainable policy update, and require owner review before activation.
 - **Phase 3:** cross-Gateway A2A plus read-only Google Calendar FreeBusy. The same
   typed capability becomes an A2A Skill; Calendar adds authoritative conflict checks.
 - **Phase 4:** a separate Agent Holds calendar with expiring tentative events and

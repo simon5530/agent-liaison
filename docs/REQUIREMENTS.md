@@ -66,6 +66,26 @@ candidate slots while the owner receives the same choices for approval.
   returned to Guest.
 - Owner approval remains mandatory; memory context cannot create a commitment.
 
+## Phase 2.2: owner-reviewed policy learning
+
+- Every owner response is classified as `approve`, `modify`, `decline`, or `revoke`
+  and linked to the proposal, policy version, and non-sensitive decision features.
+- Decision evidence may include request class, duration, lead time, local time band,
+  day type, location/transport class, conflict class, and owner-provided reason code.
+- Raw conversation text, private calendar titles, personal names, and memory excerpts
+  are not learning features.
+- The system may propose a decision tree, scorecard, matrix, or rule change only after
+  enough relevant observations exist; the proposal must include supporting and
+  contradictory examples plus a confidence statement.
+- Learned policy is never activated silently. The owner must review, edit, approve,
+  or reject each policy version.
+- A policy version is explainable, reversible, and auditable. The owner can inspect
+  why it applied and roll back or revoke it through conversation.
+- Lower confirmation frequency is granted per bounded decision class, not globally.
+  Novel, conflicting, sensitive, or low-confidence requests continue to escalate.
+- The initial release evaluates policy suggestions offline and does not autonomously
+  change production behavior.
+
 ## Future connected requirements
 
 - Google Calendar becomes the initial authoritative schedule store when the A2A
@@ -101,6 +121,7 @@ candidate slots while the owner receives the same choices for approval.
 - generic cross-agent session or transcript access for the guest agent;
 - direct Node access for the guest agent;
 - automatic displacement of a confirmed event based only on model-estimated priority;
+- opaque preference learning or silent expansion of delegated authority;
 - voice identity cloning or pretending the owner personally replied.
 
 ## Cost boundary

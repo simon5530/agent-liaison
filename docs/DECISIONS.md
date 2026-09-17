@@ -128,6 +128,21 @@
   arbitrary prompt delivery. Removing the broader route reduces prompt-injection
   and accidental-disclosure risk without affecting the broker.
 
+## ADR-014: Learn policy through owner-reviewed decision evidence
+
+- **Status:** accepted as planned Phase 2.2 work
+- **Date:** 2026-09-17
+- **Decision:** Treat owner approvals, modifications, declines, and revocations as
+  structured decision evidence. The system may propose an interpretable decision
+  tree, scorecard, matrix, or rule update, but no learned policy becomes active until
+  the owner reviews and approves a versioned change.
+- **Reason:** Personal scheduling judgment is usually implicit and evolves through
+  repeated choices. Making that policy visible can reduce future interruptions while
+  preserving human authority and creating a differentiator beyond calendar CRUD.
+- **Tradeoff:** Early operation asks the owner more questions and requires evidence
+  quality controls. Autonomy increases more slowly, but the resulting policy is
+  explainable, reversible, and auditable instead of becoming a hidden personal model.
+
 ## Open decisions
 
 - Whether a provider-neutral availability interface is needed when Calendar and A2A
@@ -136,3 +151,4 @@
   without asking first.
 - How requester identity and trust tiers map across LINE, email, and other channels.
 - What categories of non-scheduling provisional answers are safe enough to explore.
+- What evidence threshold is sufficient to propose a policy rule for owner review.

@@ -49,3 +49,21 @@ not make the decision on the owner's behalf.
 The typed capability and state boundary between the Guest agent and Owner agent. It
 accepts only scheduling fields, correlates the proposal and decision, enforces expiry,
 and prevents arbitrary cross-agent prompt exchange.
+
+## Decision evidence
+
+A structured, privacy-minimized record of the proposal context and the owner's
+approve, modify, decline, or revoke outcome. It supports later policy evaluation but
+does not itself grant authority or expose private conversation content.
+
+## Policy proposal
+
+An interpretable, versioned decision tree, scorecard, matrix, or rule change derived
+from accumulated decision evidence. It includes confidence and contradictory evidence
+and remains inactive until the owner reviews and approves it.
+
+## Learned policy
+
+An owner-approved policy version that may reduce confirmation frequency for a narrow
+decision class. It is explainable, auditable, reversible, and never expands authority
+outside its approved scope.
