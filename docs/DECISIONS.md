@@ -143,6 +143,23 @@
   quality controls. Autonomy increases more slowly, but the resulting policy is
   explainable, reversible, and auditable instead of becoming a hidden personal model.
 
+## ADR-015: Enforce a scheduling action zone outside agent reasoning
+
+- **Status:** accepted as an architecture direction
+- **Date:** 2026-09-18
+- **Decision:** Treat every human or agent caller as an untrusted principal until a
+  deterministic boundary authenticates it, validates a typed intent, checks policy,
+  limits data and effects, stages reversible changes, and records the outcome. The
+  boundary governs observable actions; it does not depend on inspecting or controlling
+  the caller's private model, prompt, tools, or reasoning.
+- **Reason:** Future coordination may be agent-to-agent and mostly autonomous. Prompt
+  instructions and workflow order are not security boundaries. A reference-monitor-
+  style enforcement point lets autonomy increase without granting broad ambient
+  authority.
+- **Tradeoff:** The boundary adds policy versioning, identity, effect-time checks,
+  receipts, and failure handling. Existing sandbox, gateway, and policy components
+  should be reused; only scheduling-specific state and consequences remain custom.
+
 ## Open decisions
 
 - Whether a provider-neutral availability interface is needed when Calendar and A2A
@@ -152,3 +169,5 @@
 - How requester identity and trust tiers map across LINE, email, and other channels.
 - What categories of non-scheduling provisional answers are safe enough to explore.
 - What evidence threshold is sufficient to propose a policy rule for owner review.
+- Which existing governance components are proportionate for a single-owner local
+  deployment before cross-Gateway agent traffic exists.

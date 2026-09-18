@@ -51,3 +51,59 @@ Prototype only the thin liaison layer:
 5. escalation and audit.
 
 This keeps the custom portion small and tests the unique product hypothesis.
+
+## Agent action-zone preflight
+
+Checked on 2026-09-18.
+
+### Security model
+
+- [NIST SP 800-207 Zero Trust Architecture](https://www.nist.gov/publications/zero-trust-architecture)
+  removes implicit trust based on network location or ownership and requires explicit
+  authentication and authorization around protected resources.
+- [OWASP Agentic AI Threats and Mitigations](https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/)
+  treats agent autonomy as a threat-model problem rather than a prompt-only problem.
+- [Open Policy Agent](https://www.openpolicyagent.org/docs/latest/) separates policy
+  decision from enforcement and can evaluate structured identity, resource, network,
+  time, and action inputs.
+- [OpenFGA](https://github.com/openfga/openfga) provides fine-grained relationship-
+  based authorization, but it does not sandbox execution or decide scheduling-domain
+  consequences by itself.
+
+### Agent-specific infrastructure
+
+- [Microsoft Agent Governance Toolkit](https://github.com/microsoft/agent-governance-toolkit)
+  combines action interception, policy enforcement, identity, approval, sandboxing,
+  and audit. Its README marked the project Public Preview on the check date. This is
+  the closest existing implementation of the general action-zone concept.
+- [agentgateway](https://github.com/agentgateway/agentgateway) is an open-source Linux
+  Foundation data plane for LLM, MCP, and A2A traffic with authentication, RBAC/CEL
+  policy, rate limiting, guardrails, and OpenTelemetry. It governs traffic but is not
+  a complete business-state or execution-isolation layer.
+- [Kubernetes SIG Agent Sandbox](https://github.com/kubernetes-sigs/agent-sandbox)
+  manages isolated, stateful agent workloads and delegates low-level isolation to
+  runtimes such as gVisor or Kata Containers. It is a sandbox orchestrator, not the
+  scheduling authorization policy.
+- [E2B](https://github.com/e2b-dev/E2B) and
+  [OpenSandbox](https://github.com/opensandbox-group/OpenSandbox) provide isolated
+  execution environments for agent code and tools. Sandboxing limits computation;
+  it does not by itself prevent an authorized tool from making an unsafe business
+  change.
+
+### Build / buy decision
+
+Do not build another generic sandbox, agent gateway, identity provider, or policy
+language. Compose existing controls where production deployment needs them. Keep the
+custom layer at the domain boundary:
+
+1. authenticate the requesting human or agent and bind delegation depth;
+2. normalize free-form input into a typed scheduling intent;
+3. authorize data reads and actions against policy and current state;
+4. expose only derived availability and opaque proposal identifiers;
+5. stage reversible effects and require approval for commitments or displacement;
+6. re-check policy immediately before each external effect;
+7. emit correlated, tamper-evident decision and effect receipts.
+
+The market validates the architecture but also removes the case for a separate broad
+platform. Agent Liaison should prove the scheduling-specific policy and state machine
+on a small local deployment first.
