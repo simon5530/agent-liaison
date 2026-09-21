@@ -31,6 +31,11 @@
 
 ## Publication and contribution checklist
 
+Follow the reusable
+[publication security gate](https://github.com/simon5530/applied-agent-systems/blob/main/docs/PUBLICATION_SECURITY_GATE.md)
+and update this repository's `docs/PUBLICATION_AUDIT.md`. In addition to that shared
+procedure:
+
 - scan current files and full Git history for secrets and personal identifiers;
 - use synthetic calendar fixtures and identities;
 - document third-party licenses and keep the repository license current;

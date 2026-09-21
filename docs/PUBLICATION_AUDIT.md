@@ -1,6 +1,6 @@
 # Publication audit
 
-Last verified: 2026-09-16
+Last verified: 2026-09-21
 
 ## Scope
 
@@ -13,6 +13,7 @@ Last verified: 2026-09-16
 ## Checks
 
 - Gitleaks 8.30.1 full-history scan: no secrets detected.
+- Gitleaks 8.30.1 current-tree scan: no secrets detected.
 - Custom privacy scan: no personal email, channel sender ID, user home path,
   Tailscale hostname/IP, auth-profile ID, or private-key marker detected.
 - Commit history rebuilt as a sanitized public baseline using a GitHub noreply address.
@@ -28,6 +29,10 @@ Last verified: 2026-09-16
   is disabled; the broker uses only its three typed tools.
 - License: MIT.
 - Local Markdown links resolved.
+- Python policy-core tests passed: 7 tests via the standard-library test runner.
+- OpenClaw plugin tests passed: 13 tests; TypeScript build completed successfully.
+- Repository-specific security rules now reference the reusable publication gate in
+  `simon5530/applied-agent-systems`; this audit remains the project-specific evidence.
 - GitHub Secret Scanning and Push Protection enabled.
 - GitHub private vulnerability reporting enabled for responsible disclosure.
 
