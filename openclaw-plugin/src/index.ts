@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
-import { Type } from "typebox";
+import { Type, type TSchema } from "typebox";
+import { Value } from "typebox/value";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DurableStore, defaultStateDirectory, type Envelope, type Effect } from "./store.js";
 import { defineToolPlugin } from "openclaw/plugin-sdk/tool-plugin";
 
 const configSchema = Type.Object({
@@ -86,10 +91,54 @@ export type Proposal = {
 type StoredProposal = {
   proposal: Proposal;
   request: AvailabilityRequest;
+  requestDigest: string;
   requesterSessionKey: string;
 };
 
-const proposalStore = new Map<string, StoredProposal>();
+const slotSchema = Type.Object({ slotId: Type.String({pattern: "^slot-[1-3]$"}), start: Type.String(), end: Type.String(), timezone: Type.Literal("Asia/Taipei"), weekday: Type.Union(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"].map(v => Type.Literal(v))) }, {additionalProperties:false});
+const storedSchema = Type.Object({
+ proposal: Type.Object({ proposalId: Type.String({pattern:"^candidate-[a-f0-9]{64}$"}), createdAt: Type.String(), expiresAt: Type.String(), state: Type.Union(["awaiting_context","pending_owner","confirmed","declined","expired"].map(v=>Type.Literal(v))), authority: Type.Union([Type.Literal("candidate"),Type.Literal("confirmed")]), source: Type.Union([Type.Literal("unreviewed"), Type.Literal("policy_only"), Type.Literal("main_memory")]), contextBasis: Type.Array(contextualCandidatesSchema.properties.contextBasis.items,{maxItems:3}), slots: Type.Array(slotSchema,{maxItems:3}), selectedSlot: Type.Optional(slotSchema) },{additionalProperties:false}),
+ request: requestSchema, requestDigest: Type.String({pattern:"^[a-f0-9]{64}$"}), requesterSessionKey: Type.String({maxLength:512})
+},{additionalProperties:false});
+let store: DurableStore<StoredProposal> | undefined;
+let stateDirectory = defaultStateDirectory();
+function validStored(v: unknown): v is StoredProposal {
+ if(!Value.Check(storedSchema,v)) return false;
+ const r=v as StoredProposal;
+ try { validateWindow(r.request); } catch { return false; }
+ return /^[a-f0-9]{64}$/.test(r.request.idempotencyKey) && [r.proposal.createdAt,r.proposal.expiresAt,...r.proposal.slots.flatMap(s=>[s.start,s.end]),...(r.proposal.selectedSlot ? [r.proposal.selectedSlot.start,r.proposal.selectedSlot.end]:[])].every(t=>/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(t)&&Number.isFinite(Date.parse(t))) && Date.parse(r.proposal.expiresAt)-Date.parse(r.proposal.createdAt)===PROPOSAL_TTL_MS;
+}
+function db() { return store ??= new DurableStore(stateDirectory, validStored); }
+function canonical(v: unknown): unknown { return Array.isArray(v) ? v.map(canonical) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).filter(([,x])=>x!==undefined).sort(([a],[b])=>a.localeCompare(b)).map(([k,x])=>[k,canonical(x)])) : v; }
+const digest = (v: unknown) => createHash("sha256").update(JSON.stringify(canonical(v))).digest("hex");
+function transaction<R>(now: Date, fn: (rows: Map<string, Envelope<StoredProposal>>) => R): R {
+ return db().transaction(now, rows => {
+  for (const record of rows.values()) {
+   const old = record.value.proposal.state;
+   expire(record.value, now);
+   if (old !== record.value.proposal.state) record.events.push({at:now.toISOString(),kind:"expired"});
+  }
+  return fn(rows);
+ });
+}
+export function reopenProposalStoreForTests(directory: string) { store?.close(); store=undefined; stateDirectory=directory; }
+function requireValid(schema: TSchema, raw: unknown) { if (!Value.Check(schema, raw)) throw new Error("invalid typed input"); }
+export function ownerReceipt(proposalId: string, now = new Date()) {
+ return transaction(now, rows => { const r=rows.get(proposalId); if(!r) throw new Error("proposal not found"); return {proposal:r.value.proposal, request: {...r.value.request, idempotencyKey:undefined}, events:r.events, effects:r.effects, delivery:"not_observed"}; });
+}
+export function listOwnerProposals(limit=20, now=new Date()) {
+ if(!Number.isInteger(limit)||limit<1||limit>50) throw new Error("invalid limit");
+ return transaction(now, rows => [...rows.values()].sort((a,b)=>b.value.proposal.createdAt.localeCompare(a.value.proposal.createdAt)||a.value.proposal.proposalId.localeCompare(b.value.proposal.proposalId)).slice(0,limit).map(r=>({proposal:r.value.proposal,events:r.events,effects:r.effects,delivery:"not_observed"})));
+}
+export async function scheduleOnce(proposalId: string, effect: Effect, call: () => Promise<unknown>): Promise<boolean> {
+ let claim: {run:boolean;scheduled:boolean};
+ try { claim=transaction(new Date(), rows=>{ const r=rows.get(proposalId); if(!r) throw new Error("proposal not found"); if(r.effects[effect]) return {run:false,scheduled:r.effects[effect]==="scheduled"}; if (["expired","declined","confirmed"].includes(r.value.proposal.state) && effect!=="requester_decision") return {run:false,scheduled:false}; r.effects[effect]="attempted"; r.events.push({at:new Date().toISOString(),kind:"scheduling_attempted",effect}); return {run:true,scheduled:false}; }); } catch { return false; } // proposal was already committed; fail closed without losing its ID
+ if(!claim.run) return claim.scheduled;
+ let outcome: "scheduled"|"failed"|"unknown";
+ try { outcome=await call() ? "scheduled":"failed"; } catch { outcome="unknown"; }
+ try { transaction(new Date(), rows=>{const r=rows.get(proposalId)!; r.effects[effect]=outcome; r.events.push({at:new Date().toISOString(),kind:outcome,effect});}); } catch { return false; } // attempted remains queryable; never repeat an uncertain effect
+ return outcome==="scheduled";
+}
 const PROPOSAL_TTL_MS = 8 * 60 * 60_000;
 const OWNER_REMINDER_DELAY_MS = 2 * 60 * 60_000;
 
@@ -123,7 +172,7 @@ function validateWindow(request: AvailabilityRequest): number {
   const rangeDays = Math.round((lastDay.getTime() - firstDay.getTime()) / 86_400_000);
   const earliest = minutes(request.earliestStart);
   const latest = minutes(request.latestEnd);
-  if (rangeDays < 0 || rangeDays > 14) throw new Error("date range must be between 0 and 14 days");
+  if (!Number.isFinite(rangeDays) || isoDate(firstDay) !== request.startDate || isoDate(lastDay) !== request.endDate || rangeDays < 0 || rangeDays > 14) throw new Error("date range must be between 0 and 14 days");
   if (latest <= earliest || latest - earliest < request.durationMinutes) {
     throw new Error("daily window cannot fit the requested duration");
   }
@@ -211,27 +260,17 @@ export function createCandidateProposal(
   requesterSessionKey: string,
   now = new Date(),
 ): Proposal {
+  requireValid(requestSchema, request);
   validateWindow(request);
-  const digest = createHash("sha256")
-    .update(JSON.stringify({ request, requesterSessionKey }))
-    .digest("hex")
-    .slice(0, 16);
-  const proposalId = `candidate-${digest}`;
-  const existing = proposalStore.get(proposalId);
-  if (existing) return expire(existing, now).proposal;
-
-  const proposal: Proposal = {
-    proposalId,
-    createdAt: now.toISOString(),
-    state: "awaiting_context",
-    authority: "candidate",
-    source: "unreviewed",
-    contextBasis: [],
-    expiresAt: new Date(now.getTime() + PROPOSAL_TTL_MS).toISOString(),
-    slots: [],
-  };
-  proposalStore.set(proposalId, { proposal, request, requesterSessionKey });
-  return proposal;
+  return transaction(now, rows => {
+    const proposalId = "candidate-" + digest({requesterSessionKey,key:request.idempotencyKey});
+    const requestDigest = digest(request);
+    const existing=rows.get(proposalId);
+    if(existing) { if(existing.value.requestDigest!==requestDigest) throw new Error("idempotency conflict"); return existing.value.proposal; }
+    const proposal: Proposal = { proposalId, createdAt:now.toISOString(), expiresAt:new Date(now.getTime()+PROPOSAL_TTL_MS).toISOString(), state:"awaiting_context", authority:"candidate", source:"unreviewed", contextBasis:[], slots:[] };
+    rows.set(proposalId,{value:{proposal,request:{...request,idempotencyKey:digest(request.idempotencyKey)},requestDigest,requesterSessionKey},events:[{at:now.toISOString(),kind:"submission_accepted"}],effects:{}});
+    return proposal;
+  });
 }
 
 export function submitContextualCandidates(
@@ -241,9 +280,14 @@ export function submitContextualCandidates(
   contextBasis: Proposal["contextBasis"],
   now = new Date(),
 ): { proposal: Proposal; requesterSessionKey: string } {
-  const record = proposalStore.get(proposalId);
+  return transaction(now, rows => {
+  const envelope = rows.get(proposalId);
+  const record = envelope?.value;
   if (!record) throw new Error("proposal not found");
   expire(record, now);
+  requireValid(contextualCandidatesSchema,{proposalId,candidates,source,contextBasis});
+  const fingerprint=digest({candidates,source,contextBasis});
+  if(envelope!.contextDigest===fingerprint) return {proposal:record.proposal,requesterSessionKey:record.requesterSessionKey};
   if (record.proposal.state !== "awaiting_context") throw new Error("proposal is not awaiting owner context");
   if (source === "main_memory" && !contextBasis.some((basis) => basis !== "request_constraints_only")) {
     throw new Error("main_memory source requires a memory-derived context basis");
@@ -258,7 +302,9 @@ export function submitContextualCandidates(
     contextBasis: [...new Set(contextBasis)],
     slots: validateContextualCandidates(record.request, candidates),
   };
+  envelope!.contextDigest=fingerprint; envelope!.events.push({at:now.toISOString(),kind:"context_submitted"});
   return { proposal: record.proposal, requesterSessionKey: record.requesterSessionKey };
+  });
 }
 
 export function getProposalStatus(
@@ -266,17 +312,23 @@ export function getProposalStatus(
   requesterSessionKey: string,
   now = new Date(),
 ): Proposal {
-  const record = proposalStore.get(proposalId);
+  return transaction(now, rows => {
+  const envelope = rows.get(proposalId);
+  const record = envelope?.value;
   if (!record || record.requesterSessionKey !== requesterSessionKey) {
     throw new Error("proposal not found for this requester");
   }
   return expire(record, now).proposal;
+  });
 }
 
 export function getOwnerProposalStatus(proposalId: string, now = new Date()): Proposal {
-  const record = proposalStore.get(proposalId);
+  return transaction(now, rows => {
+  const envelope = rows.get(proposalId);
+  const record = envelope?.value;
   if (!record) throw new Error("proposal not found");
   return expire(record, now).proposal;
+  });
 }
 
 export function recordOwnerDecision(
@@ -286,9 +338,14 @@ export function recordOwnerDecision(
   now = new Date(),
   replacement?: CandidateInput,
 ): { proposal: Proposal; requesterSessionKey: string } {
-  const record = proposalStore.get(proposalId);
+  return transaction(now, rows => {
+  const envelope = rows.get(proposalId);
+  const record = envelope?.value;
   if (!record) throw new Error("proposal not found");
   expire(record, now);
+  requireValid(decisionSchema,{proposalId,decision,...(selectedSlotId ? {selectedSlotId}:{}),...(replacement ? {replacement}:{})});
+  const fingerprint=digest({decision,selectedSlotId,replacement});
+  if(envelope!.decisionDigest===fingerprint) return {proposal:record.proposal,requesterSessionKey:record.requesterSessionKey};
   if (record.proposal.state !== "pending_owner") throw new Error("proposal is not pending owner approval");
 
   if (decision === "decline") {
@@ -336,11 +393,13 @@ export function recordOwnerDecision(
       slots: [selected],
     };
   }
+  envelope!.decisionDigest=fingerprint; envelope!.events.push({at:now.toISOString(),kind:"decision_recorded"});
   return { proposal: record.proposal, requesterSessionKey: record.requesterSessionKey };
+  });
 }
 
 export function resetProposalStoreForTests(): void {
-  proposalStore.clear();
+  reopenProposalStoreForTests(mkdtempSync(join(tmpdir(), "liaison-test-")));
 }
 
 function isAllowedGuest(ctx: { agentId?: string; sessionKey?: string }, allowlist: string[]) {
@@ -413,6 +472,22 @@ export default defineToolPlugin({
   configSchema,
   tools: (tool) => [
     tool({
+      name: "list_owner_candidate_proposals",
+      label: "List Owner Candidate Proposals",
+      description: "Discover up to 50 recent durable proposals and scheduling receipts. Scheduled never means delivered.",
+      parameters: Type.Object({limit:Type.Optional(Type.Integer({minimum:1,maximum:50}))},{additionalProperties:false}),
+      optional: true,
+      factory({config,toolContext}) {
+        if(!isOwner(toolContext,config.ownerSessionKey)) return null;
+        return {name:"list_owner_candidate_proposals",label:"List Owner Candidate Proposals",description:"Bounded recent broker receipts only.",parameters:Type.Object({limit:Type.Optional(Type.Integer({minimum:1,maximum:50}))},{additionalProperties:false}),executionMode:"sequential",async execute(_id:string,raw:unknown) {
+          requireValid(Type.Object({limit:Type.Optional(Type.Integer({minimum:1,maximum:50}))},{additionalProperties:false}),raw);
+          const details={ok:true,proposals:listOwnerProposals((raw as {limit?:number}).limit)};
+          return {content:[{type:"text",text:JSON.stringify(details)}],details};
+        }};
+      },
+    }),
+
+    tool({
       name: "request_candidate_times",
       label: "Request Candidate Times",
       description: "Send a typed scheduling request for owner-context review. Does not check a calendar or node.",
@@ -430,7 +505,7 @@ export default defineToolPlugin({
             const request = raw as AvailabilityRequest;
             const requesterSessionKey = toolContext.sessionKey as string;
             const proposal = createCandidateProposal(request, requesterSessionKey);
-            const notification = await api.session.workflow.scheduleSessionTurn({
+            const notification = await scheduleOnce(proposal.proposalId, "owner_review", () => api.session.workflow.scheduleSessionTurn({
               sessionKey: config.ownerSessionKey,
               agentId: "main",
               delayMs: 0,
@@ -439,8 +514,8 @@ export default defineToolPlugin({
               name: `Agent Liaison owner review ${proposal.proposalId}`,
               tag: `liaison-owner-${proposal.proposalId}`,
               message: ownerEventFor(proposal, request),
-            });
-            const reminder = await api.session.workflow.scheduleSessionTurn({
+            }));
+            const reminder = await scheduleOnce(proposal.proposalId, "owner_reminder", () => api.session.workflow.scheduleSessionTurn({
               sessionKey: config.ownerSessionKey,
               agentId: "main",
               delayMs: OWNER_REMINDER_DELAY_MS,
@@ -449,9 +524,11 @@ export default defineToolPlugin({
               name: `Agent Liaison pending reminder ${proposal.proposalId}`,
               tag: reminderTag(proposal.proposalId),
               message: ownerReminderFor(proposal),
-            });
+            }));
             const details = {
               ok: true,
+              submissionAccepted: true,
+              delivery: "not_observed",
               proposal,
               ownerNotificationScheduled: Boolean(notification),
               ownerReminderScheduled: Boolean(reminder),
@@ -476,6 +553,7 @@ export default defineToolPlugin({
           parameters: contextualCandidatesSchema,
           executionMode: "sequential",
           async execute(_id: string, raw: unknown) {
+            requireValid(contextualCandidatesSchema,raw);
             const { proposalId, candidates, source, contextBasis } = raw as {
               proposalId: string;
               candidates: CandidateInput[];
@@ -483,7 +561,7 @@ export default defineToolPlugin({
               contextBasis: Proposal["contextBasis"];
             };
             const result = submitContextualCandidates(proposalId, candidates, source, contextBasis);
-            const notification = await api.session.workflow.scheduleSessionTurn({
+            const notification = await scheduleOnce(proposalId, "requester_options", () => api.session.workflow.scheduleSessionTurn({
               sessionKey: result.requesterSessionKey,
               agentId: "guest",
               delayMs: 0,
@@ -492,10 +570,11 @@ export default defineToolPlugin({
               name: `Agent Liaison candidate result ${proposalId}`,
               tag: `liaison-guest-options-${proposalId}`,
               message: candidateEventFor(result.proposal),
-            });
+            }));
             const details = {
               ok: true,
               proposal: result.proposal,
+              delivery: "not_observed",
               guestNotificationScheduled: Boolean(notification),
             };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };
@@ -518,6 +597,7 @@ export default defineToolPlugin({
           parameters: statusSchema,
           executionMode: "sequential",
           async execute(_id: string, raw: unknown) {
+            requireValid(statusSchema,raw);
             const { proposalId } = raw as { proposalId: string };
             const proposal = getProposalStatus(proposalId, toolContext.sessionKey as string);
             const details = { ok: true, proposal };
@@ -541,9 +621,10 @@ export default defineToolPlugin({
           parameters: statusSchema,
           executionMode: "sequential",
           async execute(_id: string, raw: unknown) {
+            requireValid(statusSchema,raw);
             const { proposalId } = raw as { proposalId: string };
-            const proposal = getOwnerProposalStatus(proposalId);
-            const details = { ok: true, proposal };
+            const receipt = ownerReceipt(proposalId);
+            const details = { ok: true, ...receipt };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };
           },
         };
@@ -564,6 +645,7 @@ export default defineToolPlugin({
           parameters: decisionSchema,
           executionMode: "sequential",
           async execute(_id: string, raw: unknown) {
+            requireValid(decisionSchema,raw);
             const { proposalId, decision, selectedSlotId, replacement } = raw as {
               proposalId: string;
               decision: "approve" | "decline" | "revise";
@@ -571,11 +653,7 @@ export default defineToolPlugin({
               replacement?: CandidateInput;
             };
             const result = recordOwnerDecision(proposalId, decision, selectedSlotId, new Date(), replacement);
-            await api.session.workflow.unscheduleSessionTurnsByTag({
-              sessionKey: config.ownerSessionKey,
-              tag: reminderTag(proposalId),
-            });
-            const notification = await api.session.workflow.scheduleSessionTurn({
+            const notification = await scheduleOnce(proposalId, "requester_decision", () => api.session.workflow.scheduleSessionTurn({
               sessionKey: result.requesterSessionKey,
               agentId: "guest",
               delayMs: 0,
@@ -584,10 +662,11 @@ export default defineToolPlugin({
               name: `Agent Liaison owner decision ${proposalId}`,
               tag: `liaison-guest-decision-${proposalId}`,
               message: requesterEventFor(result.proposal),
-            });
+            }));
             const details = {
               ok: true,
               proposal: result.proposal,
+              delivery: "not_observed",
               guestNotificationScheduled: Boolean(notification),
             };
             return { content: [{ type: "text", text: JSON.stringify(details) }], details };

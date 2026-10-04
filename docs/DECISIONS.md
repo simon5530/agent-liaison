@@ -171,3 +171,7 @@
 - What evidence threshold is sufficient to propose a policy rule for owner review.
 - Which existing governance components are proportionate for a single-owner local
   deployment before cross-Gateway agent traffic exists.
+
+## ADR-016: SQLite durable receipts and at-most-once scheduling claims
+
+Accepted for implementation 2026-10-05; deployment pending review. Use standard-library node:sqlite with DELETE journal and FULL synchronous commits, no new dependency or bespoke stale lock recovery. Dedicated owner-only directory under OPENCLAW_STATE_DIR (home fallback), outside repository. Retain validated typed facts, routing identifiers, key/payload digests, enum receipts only. Installed SDK 2026.9.7 scheduleSessionTurn returns a job handle or undefined, not delivery proof or atomic outbox/idempotency guarantee; dependency SDK 2026.9.4 also needs verification. Commit attempted claim before host call; throw means unknown, never retry automatically. Missing handle means failed/disabled. A crash after claim can lose notification: prefer no duplicate. Owner list/status enables discovery, without automatic resend. Context processing is evidenced only by validated candidate submission. Existing reminder checks terminal state and suppresses itself after decision, eliminating cancellation side effects. Retain 30 days/1000 proposals and bounded receipts; prune on access, reject capacity rather than evict recent dedup keys. Idempotency ends after retention.

@@ -134,3 +134,7 @@ candidate slots while the owner receives the same choices for approval.
 
 Phase 1 must run locally with deterministic fixtures. No paid scheduling service or
 LLM is required for the policy decision path.
+
+## Durable broker auditability (2026-10-05)
+
+Persist typed proposals and bounded enum-only receipts outside the repository before effects. Exact configured owner/session authorization remains unchanged. Owner discovers recent 1–50 proposals without an ID; Guest reads only its own minimal view. No private memory, transcripts, raw errors or raw idempotency keys are retained. Receipts distinguish submission accepted, context submitted, decision recorded, scheduling attempted, scheduled, failed/disabled and unknown outcome. Scheduled is never delivered. Transactions serialize concurrent mutations. Replay never repeats a claimed effect, including ambiguous throws/crashes; conflicting key reuse fails. Return the durable ID after partial scheduling failure. Eight-hour expiry; thirty-day retention; maximum 1000 records; reject capacity rather than evict dedup data early. Corrupt state fails closed, secure permissions, transactional crash recovery. Synthetic tests only.

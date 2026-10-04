@@ -173,3 +173,23 @@ it returns `ownerNotificationScheduled=false` and cannot prove LINE delivery. Th
 plugin and Guest instructions therefore report scheduling only when the host returns
 a scheduler handle. A real inbound Guest LINE request is required for final live proof
 of the immediate owner turn and conditional two-hour reminder.
+
+## Durable receipts verification — 2026-10-05 (synthetic only)
+
+Requirements and ADR-016 recorded before implementation. Standard Node SQLite selected; no dependency install, live config change, Gateway restart, real notification or calendar action.
+
+- Node 26.8.2; dependency SDK 2026.9.4; installed host SDK 2026.9.7.
+- Exact commands from openclaw-plugin: `npm run build`; `npm test`; `openclaw plugins validate --root . --entry ./dist/index.js --json`. Results: TypeScript success; 29 tests passed (13 regression + 16 durability); host validator valid=true, errors=[].
+- Compiler API check overriding openclaw/plugin-sdk/tool-plugin to installed host declaration: 0 diagnostics. Runtime import probe replacing only SDK import with installed host module: all six tool metadata definitions loaded. Versions differ but no tested API blocker.
+- Tests: fresh-process reload, private permissions, physical/typed corruption, separate-process effect-claim race, concurrent replay, unknown outcome/no retry, interrupted claim, uncommitted SQLite rollback, partial scheduling failure, receipt-write failure preserving proposal ID, disabled effects, context/decision replay, key conflict/order independence, 1000-record capacity, expiry/retention, exact owner/Guest denial, minimal Guest view, secret/free-text rejection.
+- Raw exception text discarded. No transcript, memory excerpt, raw idempotency key or scheduler message body stored. Internal state retains requester routing key and typed scheduling facts. No delivery is proved.
+
+### Remaining operational limits
+
+At-most-once claim is not exactly-once delivery: crash between commit and host call can lose notification; thrown call or interrupted attempted receipt remains unknown. No automatic resend. Scheduling order does not prove processing order. Candidate/decision notifications already in flight can arrive out of order; correlated status is authoritative. Thirty-day lazy pruning runs on access, not a background deletion deadline; idempotency ends after retention. SQLite secure_delete is enabled, not a guarantee against OS backups or forensic recovery. Dedicated parent state path and local account are trusted; permissions checked on open. No live upgrade/migration proof: old volatile proposals cannot be recovered. Install rebuilt dist and enable only the new optional list tool for the configured owner, under parent-controlled deployment/review.
+
+### Durable lesson
+
+A scheduler handle is acceptance, not a delivered/read receipt. Persist typed proposal and effect claim first, separate each effect outcome, and reconcile with bounded broker queries rather than transcript visibility.
+
+Python baseline: `PYTHONPATH=src python3 -m unittest discover -s tests -v` passed all 7 tests. Initial bare unittest invocation lacked PYTHONPATH and could not import the package; corrected invocation above is the oracle. `git diff --check` passed. Generated dist was rebuilt (ignored by repository policy), with no commit/push.

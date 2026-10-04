@@ -25,6 +25,7 @@ describe("agent-liaison", () => {
   it("declares only the bounded same-Gateway tools", () => {
     const metadata = getToolPluginMetadata(entry);
     expect(metadata?.tools.map((tool) => tool.name)).toEqual([
+      "list_owner_candidate_proposals",
       "request_candidate_times",
       "submit_contextual_candidate_times",
       "check_candidate_status",
