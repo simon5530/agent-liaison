@@ -45,7 +45,7 @@
 
 2026-11-10 16:47:32（Asia/Taipei），GitHub 將本次 26/26 警示全部標為 fixed；dismissed_at 全為 null，全儲存庫 open_count=0。逐項回執見 [github-closure.json](github-closure.json)。修復 commit：1d6608e7fc7faa2a9c5c3fd6870a2f153006a5ea。
 
-[首輪遠端 CI](https://github.com/simon5530/agent-liaison/actions/runs/42785391087)：外掛 clean install、完整 audit、build、29 項測試及 4 項相容性測試均成功。Python 3.13 的 7 項測試及 demo 成功，但整體 workflow 失敗：ubuntu-latest 已指向 Ubuntu 26.04，setup-python 無 3.9 對應套件。查驗 actions/python-versions 官方 manifest 後，將 runner 固定為有 3.9.25 與 3.13.18 官方包的 ubuntu-24.04；沒有跳過測試或降低錯誤等級。Python 3.9 僅保留既有最低相容性測試，不建議作新部署版本。修正後完整 CI 結果另見本次後續 GitHub run。
+[首輪遠端 CI](https://github.com/simon5530/agent-liaison/actions/runs/42785391087)：外掛 clean install、完整 audit、build、29 項測試及 4 項相容性測試均成功。Python 3.13 的 7 項測試及 demo 成功，但整體 workflow 失敗：ubuntu-latest 已指向 Ubuntu 26.04，setup-python 無 3.9 對應套件。查驗 actions/python-versions 官方 manifest 後，將 runner 固定為有 3.9.25 與 3.13.18 官方包的 ubuntu-24.04；沒有跳過測試或降低錯誤等級。Python 3.9 僅保留既有最低相容性測試，不建議作新部署版本。修正後 [完整 CI 42785736206](https://github.com/simon5530/agent-liaison/actions/runs/42785736206) 全部成功：Python 3.9、Python 3.13、外掛 audit/build/tests 三個 job 均通過。驗證程式碼 commit 為 e1a1a4064917d315d59894af286546087bfb7fb7；結案觀察見 [verification.json](verification.json)。
 
 ## 復原紀錄
 

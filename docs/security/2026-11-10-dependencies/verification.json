@@ -1,0 +1,22 @@
+{
+  "headSha": "e1a1a4064917d315d59894af286546087bfb7fb7",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/simon5530/agent-liaison/actions/runs/42785736206",
+  "jobs": [
+    {
+      "name": "unit (3.13)",
+      "conclusion": "success"
+    },
+    {
+      "name": "openclaw-plugin",
+      "conclusion": "success"
+    },
+    {
+      "name": "unit (3.9)",
+      "conclusion": "success"
+    }
+  ],
+  "open_alerts": 0,
+  "observed_at": "2026-11-10T08:51:42.926908+00:00"
+}
