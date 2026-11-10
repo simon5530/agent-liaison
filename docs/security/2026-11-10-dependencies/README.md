@@ -28,6 +28,7 @@
 - CI 使用 npm ci --ignore-scripts，減少安裝期第三方 lifecycle script 執行；明確執行專案測試與 build。
 - 每次 push／PR 執行 npm audit --audit-level=low，任何已知等級均使此步失敗；保留開發依賴掃描。
 - 每週一 02:17 UTC（台北 10:17）重跑 CI，避免只有新 commit 才發現新公告；支援手動觸發。排程啟動屬 GitHub 服務行為，不保證精確分鐘。
+- 固定 ubuntu-24.04 runner，避免 latest OS 漂移令舊版相容性測試無法啟動；OS／Python 升級需檢查官方安裝包與 clean CI。
 - Dependabot 每週檢查 npm 與 GitHub Actions，Vitest 家族合併更新；不啟用自動合併。
 
 維護要求／尚非強制技術控制：
@@ -42,7 +43,9 @@
 
 獨立靜態審查指出的 clean-build 排序、測試產物打包、安裝腳本及最低相容版本宣告已處理：build 在 test 前，release 編譯排除測試且 files 明確列出入口檔（即使舊 dist 留有測試也不發布）；peer/pluginApi 最低版本從未驗證的 2026.5.17 收斂至本次測試的 2026.9.4。對未測試的其他 host 版本不宣稱驗收通過。
 
-GitHub CI 與遠端警示解除狀態待推送後確認。
+2026-11-10 16:47:32（Asia/Taipei），GitHub 將本次 26/26 警示全部標為 fixed；dismissed_at 全為 null，全儲存庫 open_count=0。逐項回執見 [github-closure.json](github-closure.json)。修復 commit：1d6608e7fc7faa2a9c5c3fd6870a2f153006a5ea。
+
+[首輪遠端 CI](https://github.com/simon5530/agent-liaison/actions/runs/42785391087)：外掛 clean install、完整 audit、build、29 項測試及 4 項相容性測試均成功。Python 3.13 的 7 項測試及 demo 成功，但整體 workflow 失敗：ubuntu-latest 已指向 Ubuntu 26.04，setup-python 無 3.9 對應套件。查驗 actions/python-versions 官方 manifest 後，將 runner 固定為有 3.9.25 與 3.13.18 官方包的 ubuntu-24.04；沒有跳過測試或降低錯誤等級。Python 3.9 僅保留既有最低相容性測試，不建議作新部署版本。修正後完整 CI 結果另見本次後續 GitHub run。
 
 ## 復原紀錄
 
