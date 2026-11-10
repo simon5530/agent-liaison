@@ -11,6 +11,10 @@ same-Gateway owner-approval loop; Phase 2.1 adds bounded Main-memory context.** 
 intentionally deferred until local communication, authority, expiry, and confirmation
 are reliable.
 
+## Reply-stopped reminder module
+
+The [bounded reminder broker](reminders/README.md) adds a local, tested self-reminder policy core: original-session scope, evening slots, reply cancellation and durable deduplication. It is **not yet installed or integrated with live LINE delivery**; the existing meeting plugin is unchanged.
+
 ## Try the bounded prototype
 
 Python 3.9 or newer is sufficient; the prototype has no third-party runtime
