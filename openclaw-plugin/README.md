@@ -71,11 +71,16 @@ same domain states rather than bypassing the owner-decision boundary.
 ## Build
 
 ```bash
-npm install
+npm ci --ignore-scripts
+npm audit --audit-level=low
+npm run build
+npm test
+# Use an isolated test host for plugin artifact validation; not a live Gateway.
 npm run plugin:build
 npm run plugin:validate
-npm test
 ```
+
+The clean build must precede tests: durability tests spawn processes that import `dist/index.js`. Test files are excluded from release compilation. Development SDK pins and temporary security overrides are documented in [the dependency remediation report](../docs/security/2026-11-10-dependencies/README.md). Installing dependencies with scripts disabled is not an OS sandbox for subsequent build/test execution.
 
 ## Runtime proof
 

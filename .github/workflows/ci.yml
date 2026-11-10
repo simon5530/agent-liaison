@@ -3,6 +3,9 @@ name: test
 on:
   push:
   pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * 1"
 
 permissions:
   contents: read
@@ -30,9 +33,13 @@ jobs:
           node-version: "24.16.0"
           cache: npm
           cache-dependency-path: openclaw-plugin/package-lock.json
-      - run: npm ci
+      - run: npm ci --ignore-scripts
+        working-directory: openclaw-plugin
+      - run: npm audit --audit-level=low
+        working-directory: openclaw-plugin
+      - run: npm run build
         working-directory: openclaw-plugin
       - run: npm test
         working-directory: openclaw-plugin
-      - run: npm run build
+      - run: npm run test:dependencies
         working-directory: openclaw-plugin

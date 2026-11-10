@@ -1,0 +1,444 @@
+[
+  {
+    "number": 37,
+    "package": "minimatch",
+    "version": "10.2.6",
+    "severity": "medium",
+    "ghsa": "GHSA-g3hv-75wg-m249",
+    "summary": "minimatch has potential denial of service via globparts amplification",
+    "published_at": "2026-10-30T23:09:55Z",
+    "detected_at": "2026-11-10T08:20:07Z",
+    "patched": {
+      "identifier": "11.0.1"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 36,
+    "package": "undici",
+    "version": "8.10.2",
+    "severity": "high",
+    "ghsa": "GHSA-4w7w-5xrc-9h26",
+    "summary": "undici vulnerable to cache poisoning and cross-user disclosure via cross-origin redirects",
+    "published_at": "2026-10-27T19:02:31Z",
+    "detected_at": "2026-11-10T08:20:06Z",
+    "patched": {
+      "identifier": "8.12.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 35,
+    "package": "qs",
+    "version": "6.16.0",
+    "severity": "medium",
+    "ghsa": "GHSA-6pq8-jhm2-2vcw",
+    "summary": "qs : qs.stringify with arrayFormat 'comma' throws an uncaught TypeError on array elements carrying a non-callable own toString (DoS)",
+    "published_at": "2026-10-27T16:10:55Z",
+    "detected_at": "2026-11-10T08:20:06Z",
+    "patched": {
+      "identifier": "6.16.1"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 33,
+    "package": "source-map-js",
+    "version": "1.2.1",
+    "severity": "high",
+    "ghsa": "GHSA-68fv-2mgg-jv7q",
+    "summary": "source-map-js allows event-loop denial of service through indexed source-map section offsets",
+    "published_at": "2026-09-18T18:31:44Z",
+    "detected_at": "2026-11-10T08:20:05Z",
+    "patched": {
+      "identifier": "1.2.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 32,
+    "package": "@hono/node-server",
+    "version": "2.1.1",
+    "severity": "medium",
+    "ghsa": "GHSA-rmxm-3fg6-px4f",
+    "summary": "@hono/node-server: `serveStatic` decodes the request path a second time, leading to bypass of middleware on static paths",
+    "published_at": "2026-10-28T21:05:00Z",
+    "detected_at": "2026-11-04T07:40:57Z",
+    "patched": {
+      "identifier": "2.1.3"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 29,
+    "package": "undici",
+    "version": "8.10.2",
+    "severity": "high",
+    "ghsa": "GHSA-qrxm-fqhp-jwvm",
+    "summary": "undici vulnerable to Denial of Service via TLS 1.2 certificate-changing renegotiation",
+    "published_at": "2026-10-27T19:02:21Z",
+    "detected_at": "2026-11-02T19:07:41Z",
+    "patched": {
+      "identifier": "8.12.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 28,
+    "package": "undici",
+    "version": "8.10.2",
+    "severity": "medium",
+    "ghsa": "GHSA-9fm3-97px-rjf6",
+    "summary": "undici WebSocket client vulnerable to Denial of Service via unbounded automatic PONG buffering",
+    "published_at": "2026-10-27T19:02:15Z",
+    "detected_at": "2026-11-02T19:03:40Z",
+    "patched": {
+      "identifier": "8.12.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 26,
+    "package": "undici",
+    "version": "8.10.2",
+    "severity": "high",
+    "ghsa": "GHSA-2m5v-pch6-74hx",
+    "summary": "undici vulnerable to TLS certificate validation bypass via dropped tls options in Agent",
+    "published_at": "2026-10-27T19:02:26Z",
+    "detected_at": "2026-11-02T19:00:57Z",
+    "patched": {
+      "identifier": "8.12.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 25,
+    "package": "fast-uri",
+    "version": "3.1.8",
+    "severity": "low",
+    "ghsa": "GHSA-xhq7-xmqj-769h",
+    "summary": "fast-uri vulnerable to improper path equivalence in relative reference normalization",
+    "published_at": "2026-10-23T21:39:34Z",
+    "detected_at": "2026-11-01T00:44:11Z",
+    "patched": {
+      "identifier": "3.1.9"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 24,
+    "package": "fast-uri",
+    "version": "3.1.8",
+    "severity": "low",
+    "ghsa": "GHSA-333x-w4r6-6crp",
+    "summary": "fast-uri vulnerable to scheme injection via an unescaped first-segment colon in suffix references",
+    "published_at": "2026-10-23T21:36:40Z",
+    "detected_at": "2026-11-01T00:27:49Z",
+    "patched": {
+      "identifier": "3.1.9"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 23,
+    "package": "fast-uri",
+    "version": "3.1.8",
+    "severity": "medium",
+    "ghsa": "GHSA-w74x-v6f9-j3xg",
+    "summary": "fast-uri vulnerable to URI scheme spoofing via percent-encoded scheme decoding",
+    "published_at": "2026-10-23T21:41:36Z",
+    "detected_at": "2026-11-01T00:26:57Z",
+    "patched": {
+      "identifier": "3.1.9"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 20,
+    "package": "fast-uri",
+    "version": "3.1.8",
+    "severity": "medium",
+    "ghsa": "GHSA-wjr9-j795-jxcr",
+    "summary": "fast-uri vulnerable to host confusion via unchecked WHATWG host canonicalization",
+    "published_at": "2026-10-23T21:37:59Z",
+    "detected_at": "2026-10-30T17:50:10Z",
+    "patched": {
+      "identifier": "3.1.9"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 18,
+    "package": "undici",
+    "version": "8.10.2",
+    "severity": "high",
+    "ghsa": "GHSA-xjj6-f33q-929c",
+    "summary": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings",
+    "published_at": "2026-10-23T22:14:31Z",
+    "detected_at": "2026-10-29T14:32:16Z",
+    "patched": {
+      "identifier": "8.12.2"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 17,
+    "package": "@vitest/mocker",
+    "version": "4.1.11",
+    "severity": "medium",
+    "ghsa": "GHSA-qxg6-89mg-rqv8",
+    "summary": "Vitest: Code injection via unauthenticated manual mock registration",
+    "published_at": "2026-10-21T19:54:26Z",
+    "detected_at": "2026-10-26T21:21:02Z",
+    "patched": {
+      "identifier": "4.1.12"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 16,
+    "package": "@vitest/mocker",
+    "version": "4.1.11",
+    "severity": "medium",
+    "ghsa": "GHSA-xp26-3454-mjgp",
+    "summary": "Vitest: Windows backslash traversal bypasses the @vitest/mocker redirect allowlist fix",
+    "published_at": "2026-10-21T19:48:38Z",
+    "detected_at": "2026-10-25T11:08:32Z",
+    "patched": {
+      "identifier": "4.1.12"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 14,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "medium",
+    "ghsa": "GHSA-rq7h-c2jc-7f22",
+    "summary": "Vite: Files outside `server.fs.allow` could be served when project paths match system paths on non-Windows machine",
+    "published_at": "2026-10-21T16:47:42Z",
+    "detected_at": "2026-10-24T19:45:15Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 13,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "low",
+    "ghsa": "GHSA-9jrq-w75r-8gcw",
+    "summary": "Vite: Cross origin script execution through Vite custom middleware",
+    "published_at": "2026-10-21T16:48:14Z",
+    "detected_at": "2026-10-24T19:44:23Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 12,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "medium",
+    "ghsa": "GHSA-vfpm-58rq-9qcg",
+    "summary": "Vite: First 4 bytes of files outside of `server.fs` setting is exposed by `?vite-wasm-instance`",
+    "published_at": "2026-10-21T16:47:15Z",
+    "detected_at": "2026-10-24T19:40:57Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 10,
+    "package": "@modelcontextprotocol/sdk",
+    "version": "1.30.0",
+    "severity": "medium",
+    "ghsa": "GHSA-rvq5-wwqv-78pq",
+    "summary": "MCP TypeScript SDK: Server bearer authentication accepted tokens issued for another service",
+    "published_at": "2026-10-20T19:43:36Z",
+    "detected_at": "2026-10-22T13:58:11Z",
+    "patched": {
+      "identifier": "1.32.0"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 9,
+    "package": "@modelcontextprotocol/sdk",
+    "version": "1.30.0",
+    "severity": "medium",
+    "ghsa": "GHSA-6prh-2h8m-c8cw",
+    "summary": "MCP TypeScript client SDK: HTTP client transports and OAuth requests followed cross-origin redirects and re-sent custom headers and request bodies",
+    "published_at": "2026-10-20T18:26:30Z",
+    "detected_at": "2026-10-22T10:42:08Z",
+    "patched": {
+      "identifier": "1.32.0"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 8,
+    "package": "@modelcontextprotocol/sdk",
+    "version": "1.30.0",
+    "severity": "high",
+    "ghsa": "GHSA-22jm-h49p-29qw",
+    "summary": "MCP TypeScript SDK: Experimental tasks were not tied to the session that created them",
+    "published_at": "2026-10-20T18:26:54Z",
+    "detected_at": "2026-10-21T22:17:43Z",
+    "patched": {
+      "identifier": "1.32.0"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 7,
+    "package": "hono",
+    "version": "4.13.8",
+    "severity": "medium",
+    "ghsa": "GHSA-5r4p-p66f-jhc7",
+    "summary": "Hono: `serveStatic` decodes the request path a second time, leading to bypass of middleware on static paths",
+    "published_at": "2026-10-20T14:36:11Z",
+    "detected_at": "2026-10-21T13:06:36Z",
+    "patched": {
+      "identifier": "4.13.11"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  },
+  {
+    "number": 6,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "medium",
+    "ghsa": "GHSA-r825-w8mm-5pxw",
+    "summary": "launch-editor: Editor CLI flag misinterpretation causing arbitrary command execution for some editors",
+    "published_at": "2026-10-20T19:51:52Z",
+    "detected_at": "2026-10-21T04:45:02Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 5,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "high",
+    "ghsa": "GHSA-587h-7wmj-h5pm",
+    "summary": "launch-editor: `fs.existsSync()` existence check can be bypassed on Windows",
+    "published_at": "2026-10-20T19:48:25Z",
+    "detected_at": "2026-10-21T04:31:57Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 4,
+    "package": "vite",
+    "version": "8.3.0",
+    "severity": "medium",
+    "ghsa": "GHSA-698v-4r3x-3vcv",
+    "summary": "launch-editor: escapeCmdArgs() omits % escaping on Windows",
+    "published_at": "2026-10-20T18:30:24Z",
+    "detected_at": "2026-10-20T22:07:09Z",
+    "patched": {
+      "identifier": "8.3.3"
+    },
+    "first_observed_exact_version_commit": [
+      "2e556efd1d5e9b6ab28085cf05889622ab93f74b",
+      "2026-09-16T15:03:58+08:00"
+    ]
+  },
+  {
+    "number": 3,
+    "package": "@modelcontextprotocol/sdk",
+    "version": "1.30.0",
+    "severity": "high",
+    "ghsa": "GHSA-6qxp-vccf-f47h",
+    "summary": "MCP TypeScript SDK: OAuth client could send credentials to an authorization server chosen by the MCP server",
+    "published_at": "2026-10-06T15:35:44Z",
+    "detected_at": "2026-10-14T09:03:17Z",
+    "patched": {
+      "identifier": "1.31.0"
+    },
+    "first_observed_exact_version_commit": [
+      "d28b00babaecf5ba5a70f6dd2a07f7711847b688",
+      "2026-09-16T14:26:53+08:00"
+    ]
+  }
+]
