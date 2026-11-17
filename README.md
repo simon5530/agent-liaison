@@ -1,6 +1,6 @@
 # Agent Liaison
 
-> Codename: **三號電池** — a privacy-preserving scheduling and communication
+> a privacy-preserving scheduling and communication
 > buffer that can act as a bounded third participant without impersonating its
 > owner.
 
